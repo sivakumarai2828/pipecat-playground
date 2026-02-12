@@ -1,0 +1,6 @@
+pipecat-ai[speechmatics,cartesia,openai,daily]>=0.0.40
+fastapi
+uvicorn
+websockets
+python-dotenv
+aiohttp
