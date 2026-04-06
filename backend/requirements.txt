@@ -4,3 +4,4 @@ uvicorn
 websockets
 python-dotenv
 aiohttp
+numpy

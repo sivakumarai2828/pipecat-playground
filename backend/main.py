@@ -5,28 +5,21 @@ from fastapi import FastAPI, WebSocket, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from dotenv import load_dotenv
 import aiohttp
-import openai
 from openai import AsyncOpenAI
 
-from pipecat.transports.services.daily import DailyTransport, DailyParams
+from pipecat.transports.daily.transport import DailyTransport, DailyParams
 from pipecat.pipeline.pipeline import Pipeline
 from pipecat.pipeline.runner import PipelineRunner
 from pipecat.pipeline.task import PipelineTask
 from pipecat.processors.aggregators.openai_llm_context import OpenAILLMContext
 from pipecat.services.openai.llm import OpenAILLMService
-from pipecat.services.cartesia.tts import CartesiaTTSService
-from pipecat.services.speechmatics.stt import SpeechmaticsSTTService
-from pipecat.services.speechmatics.stt import TurnDetectionMode
 from pipecat.frames.frames import Frame, TranscriptionFrame, TextFrame, FunctionCallsStartedFrame, FunctionCallInProgressFrame
 from pipecat.processors.frame_processor import FrameProcessor
-from pipecat.services.llm_service import FunctionCallParams
-from pipecat.adapters.schemas.function_schema import FunctionSchema
-
 
 from services.stt import get_stt_service
-from services.llm import get_llm_service
 from services.tts import get_tts_service
-from metrics import EventBus, MetricsTracker
+from services.rag import RAGService
+from metrics import EventBus, MetricsTracker, CostTracker
 
 load_dotenv(override=True)
 
@@ -40,6 +33,13 @@ app.add_middleware(
 
 event_bus = EventBus()
 metrics = MetricsTracker()
+cost_tracker = CostTracker()
+rag_service = RAGService(openai_api_key=os.getenv("OPENAI_API_KEY", ""))
+
+@app.on_event("startup")
+async def startup_event():
+    """Pre-embed knowledge base documents on server start."""
+    await rag_service.initialize()
 
 class UserTranscriptBroadcaster(FrameProcessor):
     def __init__(self, event_bus):
@@ -47,14 +47,17 @@ class UserTranscriptBroadcaster(FrameProcessor):
         self.event_bus = event_bus
 
     async def process_frame(self, frame: Frame, direction):
-        await super().process_frame(frame, direction)
         if isinstance(frame, TranscriptionFrame):
-            print(f"USER STT: {frame.text}")
+            print(f"DEBUG: USER STT: {frame.text}")
             await self.event_bus.broadcast({
                 "type": "transcript",
                 "role": "user",
                 "text": frame.text
             })
+            # Estimate ~0.15 sec of speech per word for cost tracking
+            cost_tracker.add_stt(len(frame.text.split()) * 0.15)
+            # Estimate LLM input tokens (~0.75 tokens per char)
+            cost_tracker.add_llm_tokens(int(len(frame.text) * 0.75), 0)
         await self.push_frame(frame, direction)
 
 class AssistantTranscriptBroadcaster(FrameProcessor):
@@ -63,10 +66,6 @@ class AssistantTranscriptBroadcaster(FrameProcessor):
         self.event_bus = event_bus
 
     async def process_frame(self, frame: Frame, direction):
-        await super().process_frame(frame, direction)
-        # DEBUG: Log frame type
-        # print(f"ASSISTANT FRAME: {type(frame).__name__}")
-        
         if isinstance(frame, FunctionCallsStartedFrame):
             for call in frame.function_calls:
                 print(f"DEBUG: LLM starting tool calls: {call.function_name}")
@@ -75,12 +74,15 @@ class AssistantTranscriptBroadcaster(FrameProcessor):
             print(f"DEBUG: LLM calling tool: {frame.function_name}")
            
         if isinstance(frame, TextFrame):
-            # print(f"ASSISTANT TEXT: {frame.text}")
+            print(f"DEBUG: ASSISTANT TEXT: {frame.text[:50]}...")
             await self.event_bus.broadcast({
                 "type": "transcript_partial",
                 "role": "assistant",
                 "text": frame.text
             })
+            # Track TTS chars and LLM output tokens
+            cost_tracker.add_tts_chars(len(frame.text))
+            cost_tracker.add_llm_tokens(0, int(len(frame.text) * 0.75))
         await self.push_frame(frame, direction)
 
 @app.get("/health")
@@ -137,11 +139,10 @@ async def websocket_endpoint(websocket: WebSocket):
         await event_bus.unsubscribe(websocket)
 
 # Define tool functions and their schemas
-async def show_text_on_screen(llm, frame):
+async def show_text_on_screen(service, tool_call, args, llm, context, result_callback):
     """Display text on the user's screen."""
-    # frame.args contains the tool arguments
-    text = frame.args.get("text", "")
-    print(f"DEBUG: show_text_on_screen called with: {text[:50]}...")
+    text = args.get("text", "")
+    print(f"DEBUG: show_text_on_screen tool handler entering for: {text[:50]}...")
     
     try:
         await event_bus.broadcast({
@@ -149,11 +150,11 @@ async def show_text_on_screen(llm, frame):
             "name": "show_text_on_screen",
             "content": text
         })
-        print("DEBUG: Broadcast successful")
-        return "SUCCESS: The text is now displayed on the user's screen in the side panel."
+        print("DEBUG: show_text_on_screen broadcast successful")
+        await result_callback("SUCCESS: The text is now displayed on the user's screen in the side panel.")
     except Exception as e:
-        print(f"DEBUG: Broadcast error: {e}")
-        return f"ERROR: Failed to display text: {str(e)}"
+        print(f"DEBUG: show_text_on_screen broadcast error: {e}")
+        await result_callback(f"ERROR: Failed to display text: {str(e)}")
 
 async def generate_ui_component_task(prompt: str):
     """Background task to generate UI component with progress updates."""
@@ -197,7 +198,7 @@ async def generate_ui_component_task(prompt: str):
         response = await client.chat.completions.create(
             model="gpt-4o",
             messages=[
-                {"role": "system", "content": "You are a professional web developer. Generate a single-page React component (using Tailwind classes for styling if needed) that fulfills the user's request. Output ONLY the code, no markdown blocks, no explanation. Just the JSX/TSX content that can be rendered in an iframe or div."},
+                {"role": "system", "content": "You are a professional web developer. Generate a COMPLETE, SINGLE-FILE HTML document that fulfills the user's request. Include <!DOCTYPE html>, <html>, <head>, and <body> tags. Use Tailwind CSS via CDN (<script src=\"https://cdn.tailwindcss.com\"></script>) for styling. Ensure the design is premium, modern, and interactive. Output ONLY the code, no markdown blocks, no explanation. Just the raw HTML content."},
                 {"role": "user", "content": prompt}
             ]
         )
@@ -235,16 +236,16 @@ async def generate_ui_component_task(prompt: str):
             "message": f"Failed to generate UI: {str(e)}"
         })
 
-async def generate_ui_component(llm, frame):
+async def generate_ui_component(service, tool_call, args, llm, context, result_callback):
     """Trigger background UI generation."""
-    prompt = frame.args.get("prompt", "")
-    print(f"DEBUG: generate_ui_component triggered for: {prompt}")
+    prompt = args.get("prompt", "")
+    print(f"DEBUG: generate_ui_component tool handler entering for: {prompt}")
     
     # Start background task
     asyncio.create_task(generate_ui_component_task(prompt))
     
     # Return immediate acknowledgemnt to LLM
-    return "SUCCESS: I have started building the UI component in the background. It will appear on the user's screen in about 15 seconds. You should inform the user that you are working on it and ask if they have any other questions while they wait."
+    await result_callback("SUCCESS: I have started building the UI component in the background. It will appear on the user's screen in about 15 seconds. You should inform the user that you are working on it and ask if they have any other questions while they wait.")
 
 show_text_on_screen_schema = {
     "type": "function",
@@ -268,7 +269,7 @@ generate_ui_component_schema = {
     "type": "function",
     "function": {
         "name": "generate_ui_component",
-        "description": "Generate a dynamic, interactive mini-app or UI widget based on a prompt.",
+        "description": "Generate a dynamic, interactive mini-app, widget, or visualization as a standalone HTML page. Use this when the user asks for something visual, interactive, or complex like a dashboard, game, or specialized calculator.",
         "parameters": {
             "type": "object",
             "properties": {
@@ -281,6 +282,113 @@ generate_ui_component_schema = {
         }
     }
 }
+
+async def get_weather(service, tool_call, args, llm, context, result_callback):
+    """Fetch current weather for a location."""
+    location = args.get("location", "London")
+    print(f"DEBUG: get_weather tool handler entering for: {location}")
+    # Mock weather for demo
+    weathers = {
+        "london": "cloudy, 12°C",
+        "new york": "sunny, 22°C",
+        "tokyo": "rainy, 18°C",
+        "san francisco": "foggy, 15°C",
+        "paris": "romantic, 17°C"
+    }
+    result = weathers.get(location.lower(), f"sunny, 20°C in {location}")
+    
+    try:
+        await event_bus.broadcast({
+            "type": "log",
+            "message": f"Weather fetched for {location}: {result}"
+        })
+        await result_callback(f"The current weather in {location} is {result}.")
+    except Exception as e:
+        await result_callback(f"ERROR: Failed to fetch weather: {str(e)}")
+
+get_weather_schema = {
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get the current weather for a specific location.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The city and country."
+                }
+            },
+            "required": ["location"]
+        }
+    }
+}
+
+# ---------------------------------------------------------------------------
+# RAG Tool — search the knowledge base and return grounded context
+# ---------------------------------------------------------------------------
+async def search_knowledge_base(_service, _tool_call, args, _llm, _context, result_callback):
+    """Retrieve relevant documents from the knowledge base to answer the user's question."""
+    query = args.get("query", "")
+    print(f"DEBUG: search_knowledge_base query: {query[:80]}")
+
+    await event_bus.broadcast({
+        "type": "tool_call",
+        "name": "search_knowledge_base",
+        "status": "running",
+        "progress": 50,
+        "eta": 2,
+        "message": f"Searching knowledge base for: {query[:60]}...",
+        "prompt": query,
+    })
+
+    results = await rag_service.search(query, top_k=3)
+    context_text = rag_service.format_context(results)
+
+    # Track embedding cost (rough estimate: ~10 tokens per word in query)
+    cost_tracker.add_embed_tokens(max(1, len(query.split()) * 10))
+
+    # Broadcast cost update
+    await event_bus.broadcast(cost_tracker.to_broadcast())
+
+    # Show retrieved chunks in the side panel
+    panel_md = f"## Knowledge Base Results\n\n*Query: {query}*\n\n---\n\n{context_text}"
+    await event_bus.broadcast({
+        "type": "tool_call",
+        "name": "search_knowledge_base",
+        "status": "completed",
+        "progress": 100,
+        "eta": 0,
+        "message": "Knowledge base search complete",
+        "content": panel_md,
+    })
+
+    await result_callback(
+        f"KNOWLEDGE BASE CONTEXT (use this to answer the user — cite sources):\n\n{context_text}"
+    )
+
+search_knowledge_base_schema = {
+    "type": "function",
+    "function": {
+        "name": "search_knowledge_base",
+        "description": (
+            "Search the company knowledge base to answer questions about pricing, HR policies, "
+            "employee benefits, API documentation, integrations, and product features. "
+            "ALWAYS call this tool first when the user asks any factual question about the company or product."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "A concise search query capturing the user's question."
+                }
+            },
+            "required": ["query"],
+        },
+    },
+}
+
 
 async def run_pipecat_pipeline(room_url: str, system_prompt: str):
     print(f"DEBUG: Pipeline starting with prompt: {system_prompt[:100]}...")
@@ -295,18 +403,26 @@ async def run_pipecat_pipeline(room_url: str, system_prompt: str):
         )
     )
 
+    cost_tracker.reset()
     stt = get_stt_service(os.getenv("SPEECHMATICS_API_KEY"), os.getenv("ENABLE_DIARIZATION") == "true")
-    tools = [show_text_on_screen_schema, generate_ui_component_schema]
-    
+    tools = [
+        show_text_on_screen_schema,
+        generate_ui_component_schema,
+        get_weather_schema,
+        search_knowledge_base_schema,
+    ]
+
     llm = OpenAILLMService(
         api_key=os.getenv("OPENAI_API_KEY"),
         model="gpt-4o",
-        tools=tools
+        tools=tools,
     )
-    
-    # Register tool handlers explicitly
+
+    # Register tool handlers
     llm.register_function("show_text_on_screen", show_text_on_screen)
     llm.register_function("generate_ui_component", generate_ui_component)
+    llm.register_function("get_weather", get_weather)
+    llm.register_function("search_knowledge_base", search_knowledge_base)
     tts = get_tts_service(os.getenv("CARTESIA_API_KEY"))
 
     context = OpenAILLMContext([
@@ -338,19 +454,22 @@ async def run_pipecat_pipeline(room_url: str, system_prompt: str):
         await transport.capture_participant_video(participant["id"])
 
     @llm.event_handler("on_llm_response_start")
-    async def on_llm_start(service):
+    async def on_llm_start(_service):
         print("LLM response starting...")
         metrics.start("llm")
 
     @llm.event_handler("on_llm_response_end")
-    async def on_llm_end(service):
+    async def on_llm_end(_service):
         lat = metrics.end("llm")
         print(f"LLM response finished in {lat}ms")
         await event_bus.broadcast({"type": "metrics", "llm_ms": lat})
+        # Rough token estimate from accumulated transcript text (~0.75 tokens/char)
+        # Pipecat doesn't expose raw usage counts here, so we estimate conservatively
+        await event_bus.broadcast(cost_tracker.to_broadcast())
 
     # Pipecat 0.0.40+ handles interruptions automatically if configured in pipeline
     @transport.event_handler("on_bot_interruption")
-    async def on_interruption(transport, participant):
+    async def on_interruption(_transport, participant):
         print(f"Bot Interrupted by {participant['id']}!")
         await event_bus.broadcast({"type": "log", "message": f"Bot interrupted by {participant['id']}"})
 

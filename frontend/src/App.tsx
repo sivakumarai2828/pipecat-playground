@@ -13,10 +13,21 @@ import { cn } from './utils/cn';
 import type { Transcript, Metric, EventLog } from './types';
 
 const ROLE_PRESETS = {
-    support: "You are a helpful customer support agent for a tech company. Be polite, professional, and focus on solving the user's technical issues. You will receive transcripts that may include speaker tags like 'Speaker S1:'. Understand these tags but NEVER repeat them.",
-    travel: "You are an enthusiastic and knowledgeable travel guide. Suggest amazing destinations, share fun facts about cultures, and help the user plan their dream vacation. Keep your tone adventurous and helpful.",
-    storyteller: "You are a master storyteller. When the user gives you a prompt or asks for a story, weave a captivating and imaginative tale. Use descriptive language and maintain a sense of wonder.",
-    interviewer: "You are a professional technical interviewer for a software engineering role. Ask challenging but fair questions about architecture, coding, and problem-solving. Provide brief feedback if requested.",
+    rag_assistant: [
+        "You are a Voice AI Knowledge Assistant powered by a Pipecat RAG pipeline.",
+        "Your knowledge base covers: pricing plans, HR policies, employee benefits, API docs, integrations, and product features.",
+        "",
+        "RULES:",
+        "1. ALWAYS call 'search_knowledge_base' FIRST before answering any factual question. Never guess.",
+        "2. After retrieving context, give a concise 1-3 sentence spoken answer. The full details are shown in the side panel.",
+        "3. If asked about cost comparison with OpenAI Realtime API, explain that this Pipecat stack (Speechmatics STT + GPT-4o text + Cartesia TTS) is typically 5-10x cheaper because we use text tokens instead of audio tokens for the LLM.",
+        "4. BE EXTREMELY CONCISE verbally — the side panel shows the details.",
+        "5. You will receive transcripts with speaker tags like 'Speaker S1:'; understand them but NEVER repeat them.",
+    ].join("\n"),
+    support: "You are a helpful customer support agent for a tech company. Be polite, professional, and focus on solving issues. BE EXTREMELY CONCISE. Provide summaries and one-line answers when possible. You will receive transcripts with speaker tags like 'Speaker S1:'; understand them but NEVER repeat them.",
+    travel: "You are a knowledgeable travel guide. Suggest destinations and fun facts. BE EXTREMELY CONCISE and provide quick summaries. Avoid long paragraphs. Maintain an adventurous but brief tone.",
+    storyteller: "You are a master storyteller. Weave captivating but BRIEF tales. Use descriptive language but keep total response length short (max 3-4 sentences).",
+    interviewer: "You are a technical interviewer. Ask challenging but fair questions. BE EXTREMELY CONCISE. Provide feedback in bullet points.",
     custom: ""
 };
 
@@ -32,6 +43,14 @@ const App: React.FC = () => {
     const [selectedRole, setSelectedRole] = useState<keyof typeof ROLE_PRESETS>('support');
     const [customPrompt, setCustomPrompt] = useState('');
     const [errorDialog, setErrorDialog] = useState<{ title: string, message: string } | null>(null);
+    const [userAudioLevel, setUserAudioLevel] = useState(0);
+    const [botAudioLevel, setBotAudioLevel] = useState(0);
+    const [costData, setCostData] = useState<{
+        your_stack: { stt: number; llm: number; tts: number; embed: number; total: number };
+        realtime_api: { total: number };
+        savings_pct: number;
+        stats: { stt_seconds: number; llm_input_tokens: number; llm_output_tokens: number; tts_chars: number };
+    } | null>(null);
     const [dynamicPanel, setDynamicPanel] = useState<{
         isOpen: boolean;
         name: string;
@@ -49,7 +68,9 @@ const App: React.FC = () => {
 
     useEffect(() => {
         // Only run on mount
-        const socket = new WebSocket('ws://localhost:7860/ws/events');
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+        const socket = new WebSocket(`${protocol}//${host}/ws/events`);
         ws.current = socket;
 
         socket.onopen = () => {
@@ -134,6 +155,8 @@ const App: React.FC = () => {
             }
         } else if (data.type === 'metrics') {
             setMetrics(prev => [...prev, { ...data, timestamp }]);
+        } else if (data.type === 'cost_update') {
+            setCostData(data);
         } else if (data.type === 'log') {
             setLogs(prev => [...prev, { message: data.message, type: 'info', timestamp }]);
         }
@@ -156,7 +179,8 @@ const App: React.FC = () => {
             let room_url = customRoomUrl.trim();
 
             if (!room_url) {
-                const resp = await fetch('http://localhost:7860/session/create', { method: 'POST' });
+                const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+                const resp = await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/session/create`, { method: 'POST' });
                 const data = await resp.json();
                 room_url = data.room_url;
             }
@@ -202,24 +226,43 @@ const App: React.FC = () => {
 
             setStatus(prev => ({ ...prev, client: 'READY' }));
 
+            // Listen for audio levels
+            co.on('local-audio-level', (evt: any) => {
+                setUserAudioLevel(evt.audioLevel);
+            });
+
+            co.on('remote-participants-audio-level', (evt: any) => {
+                const levels = evt.participantsAudioLevel;
+                // For this playground, we just take the highest remote level as bot level
+                const maxLevel = Math.max(...Object.values(levels) as number[], 0);
+                setBotAudioLevel(maxLevel);
+            });
+
+            await co.startLocalAudioLevelObserver();
+            await co.startRemoteParticipantsAudioLevelObserver();
+
             setLogs(prev => [...prev, { message: 'Joined Daily Room', type: 'info', timestamp: new Date().toLocaleTimeString() }]);
 
             const base_prompt = selectedRole === 'custom' ? customPrompt : ROLE_PRESETS[selectedRole as keyof typeof ROLE_PRESETS];
             const system_prompt = [
                 base_prompt,
                 "### CRITICAL FORMATTING RULES:",
-                "1. Always use proper Markdown.",
-                "2. Use DOUBLE NEWLINES (\n\n) between every paragraph. Never mash text together.",
-                "3. Use bolding and lists for clarity.",
+                "1. BE EXTREMELY CONCISE. Provide summaries instead of long explanations.",
+                "2. Always use proper Markdown.",
+                "3. Use DOUBLE NEWLINES (\n\n) between sections for clarity.",
+                "4. Use bullet points and bolding for quick scanning.",
                 "",
                 "### TOOL USAGE (MANDATORY):",
-                "- If you are about to provide a list, table, or structured data, you MUST call 'show_text_on_screen' FIRST, then summarise.",
-                "- If the user asks for a widget or mini-app, you MUST call 'generate_ui_component' FIRST.",
+                "1. If you are about to provide a list, grocery list, table, or structured data, you MUST call 'show_text_on_screen' FIRST. Do NOT describe the items verbally. Only provide a brief 1-sentence summary *after* the tool call has finished.",
+                "2. If the user asks for a widget, mini-app, or complex visualization, you MUST call 'generate_ui_component' FIRST. Provide only the HTML code in the tool args.",
+                "3. NEVER act as if you've shared information on the screen if you haven't called the corresponding tool first.",
+                "4. Be EXTREMELY BRIEF verbally.",
                 "",
-                "The user will see your response in a side panel. Do not explain the tools, just use them."
+                "The user will see your response in a side panel. Do not explain the tools, just use them and be extremely brief."
             ].join("\n");
 
-            await fetch('http://localhost:7860/agent/start', {
+            const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+            await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/agent/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ room_url, system_prompt })
@@ -358,16 +401,23 @@ const App: React.FC = () => {
                         </h3>
                         <div className="bg-white rounded-2xl p-6 h-36 flex items-center justify-center relative overflow-hidden shadow-sm border border-slate-100 shimmer">
                             <div className="flex items-end gap-1.5 h-16 w-full justify-between px-2">
-                                {[...Array(16)].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className={cn(
-                                            "w-2 bg-gradient-to-t from-primary/80 to-secondary/80 rounded-full transition-all duration-75",
-                                            status.agent === 'READY' ? "opacity-100" : "opacity-10 translate-y-2"
-                                        )}
-                                        style={{ height: `${status.agent === 'READY' ? 10 + Math.random() * 90 : 10}%` }}
-                                    />
-                                ))}
+                                {[...Array(16)].map((_, i) => {
+                                    // Add some variation per bar based on the same level
+                                    const variation = 0.5 + Math.sin(i * 0.5) * 0.5;
+                                    const height = status.agent === 'READY'
+                                        ? 10 + (botAudioLevel * 90 * variation)
+                                        : 10;
+                                    return (
+                                        <div
+                                            key={i}
+                                            className={cn(
+                                                "w-2 bg-gradient-to-t from-primary/80 to-secondary/80 rounded-full transition-all duration-75",
+                                                status.agent === 'READY' ? "opacity-100" : "opacity-10 translate-y-2"
+                                            )}
+                                            style={{ height: `${height}%` }}
+                                        />
+                                    );
+                                })}
                             </div>
                             {status.agent !== 'READY' && (
                                 <div className="absolute inset-0 flex items-center justify-center text-[10px] text-slate-400 font-black bg-white/60 backdrop-blur-[1px]">
@@ -587,11 +637,14 @@ const App: React.FC = () => {
                                         status.client === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
                                     )}>{status.client}</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div className={cn(
-                                        "h-full transition-all duration-1000 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
-                                        status.client === 'READY' ? "w-full bg-secondary shadow-[0_0_8px_rgba(8,145,178,0.3)]" : "w-1/3 bg-primary animate-pulse"
-                                    )} />
+                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
+                                    <div
+                                        className={cn(
+                                            "h-full transition-all duration-75 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
+                                            status.client === 'READY' ? "bg-secondary" : "bg-primary animate-pulse"
+                                        )}
+                                        style={{ width: status.client === 'READY' ? `${userAudioLevel * 100}%` : '33%' }}
+                                    />
                                 </div>
                             </div>
 
@@ -603,11 +656,14 @@ const App: React.FC = () => {
                                         status.agent === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
                                     )}>{status.agent}</span>
                                 </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
-                                    <div className={cn(
-                                        "h-full transition-all duration-1000 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
-                                        status.agent === 'READY' ? "w-full bg-secondary shadow-[0_0_8px_rgba(8,145,178,0.3)]" : "w-1/3 bg-primary animate-pulse"
-                                    )} />
+                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
+                                    <div
+                                        className={cn(
+                                            "h-full transition-all duration-75 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
+                                            status.agent === 'READY' ? "bg-secondary" : "bg-primary animate-pulse"
+                                        )}
+                                        style={{ width: status.agent === 'READY' ? `${botAudioLevel * 100}%` : '33%' }}
+                                    />
                                 </div>
                             </div>
                         </div>
@@ -664,6 +720,7 @@ const App: React.FC = () => {
                                         marginBottom: '10px'
                                     }}
                                 >
+                                    <option value="rag_assistant">Voice RAG Assistant (Demo)</option>
                                     <option value="support">Customer Support Agent</option>
                                     <option value="travel">Enthusiastic Travel Guide</option>
                                     <option value="storyteller">Master Storyteller</option>
@@ -693,6 +750,66 @@ const App: React.FC = () => {
                     </section>
 
                     <div className="mt-auto space-y-4">
+                        {/* Live Cost Comparison Widget */}
+                        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Zap className="w-4 h-4 text-secondary" />
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-700">Live Cost Meter</span>
+                            </div>
+                            {costData ? (
+                                <div className="space-y-3">
+                                    {/* Savings badge */}
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase">Savings vs Realtime API</span>
+                                        <span className="text-sm font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                            {costData.savings_pct}% cheaper
+                                        </span>
+                                    </div>
+                                    {/* Your stack */}
+                                    <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
+                                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-2">Pipecat Stack</p>
+                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                            <span>STT (Speechmatics)</span>
+                                            <span>${costData.your_stack.stt.toFixed(5)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                            <span>LLM (GPT-4o text)</span>
+                                            <span>${costData.your_stack.llm.toFixed(5)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                            <span>TTS (Cartesia)</span>
+                                            <span>${costData.your_stack.tts.toFixed(5)}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[10px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-1">
+                                            <span>Total</span>
+                                            <span className="text-primary">${costData.your_stack.total.toFixed(5)}</span>
+                                        </div>
+                                    </div>
+                                    {/* Realtime API */}
+                                    <div className="bg-red-50 rounded-2xl p-3 border border-red-100">
+                                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-2">OpenAI Realtime API (est.)</p>
+                                        <div className="flex justify-between text-[10px] font-black text-red-600">
+                                            <span>Audio tokens</span>
+                                            <span>${costData.realtime_api.total.toFixed(5)}</span>
+                                        </div>
+                                    </div>
+                                    {/* Stats */}
+                                    <div className="flex gap-2 text-[9px] font-bold text-slate-400">
+                                        <span>{costData.stats.stt_seconds.toFixed(1)}s audio</span>
+                                        <span>·</span>
+                                        <span>{costData.stats.llm_input_tokens + costData.stats.llm_output_tokens} tokens</span>
+                                        <span>·</span>
+                                        <span>{costData.stats.tts_chars} chars</span>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center py-4">
+                                    <p className="text-[10px] text-slate-400 font-bold">Start a session to see live cost comparison</p>
+                                    <p className="text-[9px] text-slate-300 mt-1">Pipecat vs OpenAI Realtime API</p>
+                                </div>
+                            )}
+                        </div>
+
                         <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-all">
                             <div className="absolute right-0 top-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-primary/10 transition-colors" />
                             <div className="flex items-center gap-3 mb-3">
@@ -786,10 +903,14 @@ const App: React.FC = () => {
                         ) : (
                             <div className="prose prose-slate max-w-none">
                                 {dynamicPanel.name === 'generate_ui_component' ? (
-                                    <div
-                                        className="p-4 bg-slate-50 rounded-2xl border border-slate-200 shadow-inner overflow-hidden"
-                                        dangerouslySetInnerHTML={{ __html: dynamicPanel.content }}
-                                    />
+                                    <div className="w-full h-[500px] rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-inner">
+                                        <iframe
+                                            title="UI Sandbox"
+                                            srcDoc={dynamicPanel.content}
+                                            className="w-full h-full border-none"
+                                            sandbox="allow-scripts"
+                                        />
+                                    </div>
                                 ) : (
                                     <div className="markdown-content">
                                         <ReactMarkdown
