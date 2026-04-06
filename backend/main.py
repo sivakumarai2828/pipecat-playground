@@ -372,9 +372,11 @@ search_knowledge_base_schema = {
     "function": {
         "name": "search_knowledge_base",
         "description": (
-            "Search the company knowledge base to answer questions about pricing, HR policies, "
-            "employee benefits, API documentation, integrations, and product features. "
-            "ALWAYS call this tool first when the user asks any factual question about the company or product."
+            "Search the insurance knowledge base to answer customer questions about "
+            "auto, health, home, and life insurance — coverage types, deductibles, premiums, "
+            "claims process, roadside assistance, prescription drugs, open enrollment, "
+            "billing, cancellation, and available discounts. "
+            "ALWAYS call this tool first when the customer asks any factual insurance question. Never guess."
         ),
         "parameters": {
             "type": "object",
