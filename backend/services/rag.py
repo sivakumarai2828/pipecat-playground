@@ -62,20 +62,6 @@ KNOWLEDGE_BASE = [
         ),
     },
     {
-        "id": "auto_claims",
-        "title": "How to File an Auto Insurance Claim",
-        "content": (
-            "Step 1 — Ensure safety: move to a safe location and call 911 if there are injuries. "
-            "Step 2 — Document the scene: take photos of all vehicles, license plates, road conditions, and injuries. "
-            "Step 3 — Exchange information: get the other driver's name, license number, insurance company, and policy number. "
-            "Step 4 — Report the claim: call our 24/7 claims line at 1-800-555-CLAIM or file online at myinsurance.com/claims. "
-            "Step 5 — Claims adjuster: an adjuster will contact you within 24 hours to assess damage. "
-            "Step 6 — Repair: use any shop in our preferred network for a lifetime repair guarantee, or choose your own shop. "
-            "Step 7 — Settlement: most claims are settled within 7–10 business days. "
-            "Do NOT admit fault at the scene — let the adjusters determine liability."
-        ),
-    },
-    {
         "id": "auto_roadside",
         "title": "Roadside Assistance",
         "content": (
