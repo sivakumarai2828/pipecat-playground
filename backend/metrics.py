@@ -47,6 +47,7 @@ class CostTracker:
         self.llm_output_tokens: int = 0
         self.tts_chars: int = 0
         self.embed_tokens: int = 0
+        self.session_start: float = time.time()
 
     # ------------------------------------------------------------------
     # Accumulation helpers (called from pipeline event handlers)
@@ -112,14 +113,29 @@ class CostTracker:
             return 0.0
         return round(max(0.0, (realtime - your) / realtime * 100), 1)
 
+    def projected_hourly(self) -> dict:
+        """Scale current spend to hourly rate based on elapsed session time."""
+        elapsed = max(time.time() - self.session_start, 1.0)
+        your = self.your_stack_cost()["total"]
+        realtime = self.realtime_api_cost()["total"]
+        scale = 3600.0 / elapsed
+        return {
+            "your": round(your * scale, 4),
+            "realtime": round(realtime * scale, 4),
+        }
+
     def to_broadcast(self) -> dict:
         your = self.your_stack_cost()
         realtime = self.realtime_api_cost()
+        saved = round(realtime["total"] - your["total"], 6)
+        projected = self.projected_hourly()
         return {
             "type": "cost_update",
             "your_stack": your,
             "realtime_api": realtime,
             "savings_pct": self.savings_pct(),
+            "total_saved": max(0.0, saved),
+            "projected_hourly": projected,
             "stats": {
                 "stt_seconds": round(self.stt_seconds, 1),
                 "llm_input_tokens": self.llm_input_tokens,

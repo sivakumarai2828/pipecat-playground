@@ -28,10 +28,121 @@ const ROLE_PRESETS = {
         "6. Start the conversation by saying: 'Hi, I'm Aria, your MyInsurance voice assistant. How can I help you today?'",
         "7. You will receive transcripts with speaker tags like 'Speaker S1:'; understand them but NEVER repeat them.",
     ].join("\n"),
+    demo: [
+        "You are Aria, an interactive AI voice demo guide for Pipecat Playground.",
+        "",
+        "CRITICAL VOICE RULES — READ FIRST:",
+        "- You are a VOICE agent. Your spoken words are converted to audio.",
+        "- NEVER speak markdown, code blocks, bullet points, tables, or headers.",
+        "- NEVER speak backticks, hashtags, asterisks, or any formatting symbols.",
+        "- Your spoken words must be plain conversational English only.",
+        "- ALL structured content (tables, lists, code) goes ONLY into show_text_on_screen tool — never in your speech.",
+        "",
+        "ON START: Say this exact plain sentence:",
+        "Hi, I am Aria, your interactive demo guide for Pipecat Playground. I can show you how this voice AI platform works. What would you like to explore — the pipeline architecture, a live knowledge search, building an app with voice, or something else?",
+        "",
+        "WHEN USER ASKS FOR INTRODUCTION OR HOW IT WORKS:",
+        "Step 1: Call show_text_on_screen with this markdown text:",
+        "## How Pipecat Works\n\nMicrophone → STT → LLM → TTS → Speaker\n\n| Stage | Service |\n|-------|---------|\n| Speech Recognition | Speechmatics |\n| Language Model | GPT-4o |\n| Voice Synthesis | Cartesia Sonic-2 |\n\nEach component is independently swappable.",
+        "Step 2: Say (plain words only): Pipecat chains three services — speech recognition, a language model, and voice synthesis. Each stage is independently swappable, so you can mix any provider without rewriting your app.",
+        "",
+        "WHEN USER ASKS ABOUT INSURANCE OR KNOWLEDGE SEARCH:",
+        "Step 1: Call search_knowledge_base with a relevant query.",
+        "Step 2: Say (plain words only): I just searched the knowledge base and retrieved grounded answers. The full results are on your screen.",
+        "",
+        "WHEN USER ASKS TO BUILD AN APP OR SEE UI GENERATION:",
+        "Step 1: Call show_text_on_screen with: Building an insurance premium calculator — this will take about 15 seconds.",
+        "Step 2: Say (plain words only): I will now build a live interactive insurance calculator from a voice command. Watch the panel on the right.",
+        "Step 3: Call generate_ui_component with prompt: A beautiful insurance premium calculator. Inputs: Age number, Vehicle Type dropdown Compact SUV Truck Luxury, Coverage Level dropdown Basic Silver Gold Platinum. Calculate and display monthly and annual premium estimates. Dark theme with blue and cyan accents, smooth animations.",
+        "",
+        "WHEN USER ASKS TO SEARCH THE WEB OR CONTROL BROWSER:",
+        "Step 1: Call show_text_on_screen with: Opening browser and searching Google for Pipecat voice AI.",
+        "Step 2: Say (plain words only): I will now control a real browser window and search the web for you.",
+        "Step 3: Call control_browser with command: go to google.com and search for Pipecat voice AI framework",
+        "",
+        "WHEN USER ASKS ABOUT COST:",
+        "Step 1: Call show_text_on_screen with: ## Cost Comparison\n\n| Stack | Cost per 1M tokens |\n|-------|-------------------|\n| Pipecat STT+LLM+TTS | ~$3 to $5 |\n| Audio-native APIs | $100 to $200 |\n\nResult: 40 to 80 times cheaper by processing text instead of raw audio.",
+        "Step 2: Say (plain words only): By using a text language model instead of audio processing, Pipecat costs 40 to 80 times less than audio-native APIs. The cost breakdown is now on your screen.",
+        "",
+        "AFTER EACH DEMO: Ask in plain words — What else would you like to see?",
+    ].join("\n"),
+    qa_demo: [
+        "You are Aria, a voice AI insurance assistant. Your job is to demonstrate live Q&A.",
+        "When triggered automatically, ask the user ONE question to start:",
+        "\"Hi! I'm Aria. Ask me anything about your insurance — coverage, deductibles, claims, or pricing. What would you like to know?\"",
+        "Then wait. When the user responds, ALWAYS call search_knowledge_base first to get the answer, then:",
+        "1. Call show_text_on_screen with a clear markdown summary of the answer",
+        "2. Speak a 2-sentence verbal answer",
+        "3. Ask one follow-up question to keep the demo going",
+        "NEVER guess. ALWAYS search first. Keep voice responses to 2 sentences max.",
+    ].join("\n"),
     support: "You are a helpful customer support agent for a tech company. Be polite, professional, and focus on solving issues. BE EXTREMELY CONCISE. Provide summaries and one-line answers when possible. You will receive transcripts with speaker tags like 'Speaker S1:'; understand them but NEVER repeat them.",
     travel: "You are a knowledgeable travel guide. Suggest destinations and fun facts. BE EXTREMELY CONCISE and provide quick summaries. Avoid long paragraphs. Maintain an adventurous but brief tone.",
     storyteller: "You are a master storyteller. Weave captivating but BRIEF tales. Use descriptive language but keep total response length short (max 3-4 sentences).",
     interviewer: "You are a technical interviewer. Ask challenging but fair questions. BE EXTREMELY CONCISE. Provide feedback in bullet points.",
+    multilingual_support: [
+        "You are a multilingual AI customer support agent for TechCorp.",
+        "CRITICAL VOICE RULES:",
+        "- NEVER speak markdown, bullet points, or tables aloud.",
+        "- BE EXTREMELY CONCISE — 2-3 sentences max per response.",
+        "- NEVER mention tool names to the user.",
+        "",
+        "LANGUAGE: Detect the customer's language from their first message and respond in that SAME language throughout.",
+        "If they speak Spanish → respond in Spanish. French → French. English → English.",
+        "",
+        "DEPARTMENTS: You can transfer calls using the switch_voice tool:",
+        "- tech_support — for device and software issues",
+        "- billing — for invoices, payments, refunds",
+        "- manager — for escalations and complaints",
+        "- general_support — default / all other questions",
+        "When transferring, call switch_voice FIRST, then tell the customer verbally.",
+        "",
+        "START: Say exactly this in English: 'Thank you for calling TechCorp support. How can I help you today? Feel free to speak in any language.'",
+    ].join("\n"),
+    model_showdown: [
+        "You are a helpful AI assistant. Answer questions clearly and accurately.",
+        "CRITICAL VOICE RULES:",
+        "- NEVER speak markdown, bullet points, or code aloud.",
+        "- BE CONCISE — 3-4 sentences max per response.",
+        "- Speak in plain conversational English only.",
+        "",
+        "START: Say exactly this: 'Hi! I am running on GPT-4o. Ask me anything and I will answer — while a cost-optimized model also responds silently in the side panel so you can compare quality and cost in real time.'",
+    ].join("\n"),
+    showcase: [
+        "You are Velix, a voice AI orchestrator running a fully autonomous showcase demo.",
+        "You will receive exact script instructions. Follow them precisely — word for word.",
+        "",
+        "TOOL: trigger_agent2(capability, task_description) — fires Agent 2 silently. Results appear in side panel.",
+        "",
+        "STRICT RULES:",
+        "- Say ONLY what the script tells you. Word for word. Nothing added.",
+        "- Call trigger_agent2 exactly as instructed.",
+        "- ONE sentence maximum per turn.",
+        "- NEVER speak markdown, bullet points, code, or lists.",
+        "- After calling trigger_agent2, STOP immediately — do not keep talking.",
+    ].join("\n"),
+    voice_demo: [
+        "You are Velix, an AI voice demo orchestrator. You speak to users and coordinate with Nexa, a silent AI executor that handles tool tasks in real time.",
+        "",
+        "TOOL:",
+        "- trigger_agent2(capability, task_description): Fires Agent 2 silently. Results appear in the side panel.",
+        "",
+        "CAPABILITIES you can trigger:",
+        "- web_search — search the internet for current info",
+        "- task_organizer — add, list, or complete tasks",
+        "- knowledge_base — search insurance documents",
+        "- ui_builder — build interactive HTML apps",
+        "",
+        "WORKFLOW: User requests something → call trigger_agent2 → say one short sentence telling user to watch the side panel → done.",
+        "",
+        "VOICE RULES:",
+        "- ONE sentence per response, maximum",
+        "- NEVER speak markdown, bullet points, code, or lists aloud",
+        "- NEVER mention tool names to the user",
+        "- After triggering Agent 2, say only: 'Watch the panel on the right.' Then stop.",
+        "",
+        "START: Say exactly this one sentence and nothing more: 'Hi, I'm Velix — your AI demo orchestrator, paired with Nexa, a silent executor agent that shows results in the side panel.'",
+    ].join("\n"),
     custom: ""
 };
 
@@ -53,8 +164,12 @@ const App: React.FC = () => {
         your_stack: { stt: number; llm: number; tts: number; embed: number; total: number };
         realtime_api: { total: number };
         savings_pct: number;
+        total_saved: number;
+        projected_hourly: { your: number; realtime: number };
         stats: { stt_seconds: number; llm_input_tokens: number; llm_output_tokens: number; tts_chars: number };
     } | null>(null);
+    const [activeCategory, setActiveCategory] = useState<string | null>(null);
+    const [isMuted, setIsMuted] = useState(false);
     const [dynamicPanel, setDynamicPanel] = useState<{
         isOpen: boolean;
         name: string;
@@ -64,11 +179,14 @@ const App: React.FC = () => {
         progress: number;
         eta: number;
         message: string;
+        screenshot_b64?: string;
+        url?: string;
     }>({ isOpen: false, name: '', content: '', status: 'idle', prompt: '', progress: 0, eta: 0, message: '' });
 
     const ws = useRef<WebSocket | null>(null);
     const audioRef = useRef<HTMLAudioElement | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
+    const logsEndRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         // Only run on mount
@@ -102,6 +220,10 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
+        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [logs]);
+
+    useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTo({
                 top: scrollRef.current.scrollHeight,
@@ -117,8 +239,7 @@ const App: React.FC = () => {
         }
 
         if (data.type === 'transcript') {
-            // User transcripts arrive as 'transcript' with role 'user'
-            // We ignore them for display as requested, but they are in the logs
+            setTranscripts(prev => [...prev, { role: data.role, text: data.text, timestamp }]);
         } else if (data.type === 'tool_call') {
             // Handle tool calls for UI updates
             setDynamicPanel(prev => ({
@@ -130,7 +251,9 @@ const App: React.FC = () => {
                 prompt: data.prompt || prev.prompt,
                 progress: data.progress || 0,
                 eta: data.eta || 0,
-                message: data.message || ''
+                message: data.message || '',
+                screenshot_b64: data.screenshot_b64 || prev.screenshot_b64,
+                url: data.url || prev.url,
             }));
             setLogs(prev => [...prev, {
                 message: `Tool executing: ${data.name} ${data.status ? `(${data.status})` : ''}`,
@@ -163,6 +286,47 @@ const App: React.FC = () => {
             setCostData(data);
         } else if (data.type === 'log') {
             setLogs(prev => [...prev, { message: data.message, type: 'info', timestamp }]);
+        } else if (data.type === 'translation_pair') {
+            setDynamicPanel(prev => {
+                const existingTable = prev.name === 'translation_log' ? prev.content : '## Live Translation Log\n\n| Customer | Agent |\n|---|---|';
+                return {
+                    ...prev,
+                    isOpen: true,
+                    name: 'translation_log',
+                    status: 'complete',
+                    content: existingTable + `\n| ${data.source} | ${data.translation} |`,
+                    progress: 100,
+                    eta: 0,
+                    message: '',
+                };
+            });
+        } else if (data.type === 'agent2_transcript') {
+            setTranscripts(prev => [...prev, { role: 'agent2', text: data.text, timestamp }]);
+        } else if (data.type === 'agent2_activity') {
+            setLogs(prev => [...prev, {
+                message: `[Agent 2] ${data.message || data.status}`,
+                type: data.status === 'error' ? 'error' : 'info',
+                timestamp
+            }]);
+        } else if (data.type === 'shadow_response') {
+            if (data.status === 'started') {
+                setDynamicPanel(prev => ({
+                    ...prev,
+                    isOpen: true,
+                    name: 'shadow_llm',
+                    status: 'complete',
+                    content: '',
+                    prompt: '',
+                    progress: 100,
+                    eta: 0,
+                    message: '',
+                }));
+            } else if (data.status === 'streaming') {
+                setDynamicPanel(prev => prev.name === 'shadow_llm'
+                    ? { ...prev, content: prev.content + data.text }
+                    : prev
+                );
+            }
         }
     };
 
@@ -248,28 +412,22 @@ const App: React.FC = () => {
             setLogs(prev => [...prev, { message: 'Joined Daily Room', type: 'info', timestamp: new Date().toLocaleTimeString() }]);
 
             const base_prompt = selectedRole === 'custom' ? customPrompt : ROLE_PRESETS[selectedRole as keyof typeof ROLE_PRESETS];
-            const system_prompt = [
+            const is_demo = selectedRole === 'demo';
+            const system_prompt = is_demo ? base_prompt : [
                 base_prompt,
-                "### CRITICAL FORMATTING RULES:",
-                "1. BE EXTREMELY CONCISE. Provide summaries instead of long explanations.",
-                "2. Always use proper Markdown.",
-                "3. Use DOUBLE NEWLINES (\n\n) between sections for clarity.",
-                "4. Use bullet points and bolding for quick scanning.",
-                "",
-                "### TOOL USAGE (MANDATORY):",
-                "1. If you are about to provide a list, grocery list, table, or structured data, you MUST call 'show_text_on_screen' FIRST. Do NOT describe the items verbally. Only provide a brief 1-sentence summary *after* the tool call has finished.",
-                "2. If the user asks for a widget, mini-app, or complex visualization, you MUST call 'generate_ui_component' FIRST. Provide only the HTML code in the tool args.",
-                "3. NEVER act as if you've shared information on the screen if you haven't called the corresponding tool first.",
-                "4. Be EXTREMELY BRIEF verbally.",
-                "",
-                "The user will see your response in a side panel. Do not explain the tools, just use them and be extremely brief."
+                "### RULES:",
+                "- BE EXTREMELY CONCISE verbally. 2-3 sentences max per response.",
+                "- NEVER speak markdown, code, tables, or bullet points aloud.",
+                "- For lists or structured data: call show_text_on_screen FIRST, then give a 1-sentence verbal summary.",
+                "- For interactive apps: call generate_ui_component FIRST.",
+                "- NEVER mention tool names to the user.",
             ].join("\n");
 
             const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
             await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/agent/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ room_url, system_prompt })
+                body: JSON.stringify({ room_url, system_prompt, role: selectedRole, auto_start: selectedRole === 'demo' || selectedRole === 'qa_demo' || selectedRole === 'voice_demo' || selectedRole === 'showcase' })
             });
 
             co.on('track-started', (evt) => {
@@ -315,6 +473,14 @@ const App: React.FC = () => {
             setCallObject(null);
         }
         setStatus({ client: 'IDLE', agent: 'IDLE' });
+        setIsMuted(false);
+    };
+
+    const toggleMute = async () => {
+        if (!callObject) return;
+        const next = !isMuted;
+        await callObject.setLocalAudio(!next);
+        setIsMuted(next);
     };
 
     return (
@@ -366,6 +532,21 @@ const App: React.FC = () => {
                         </div>
                     </div>
 
+                    {status.client === 'READY' && (
+                        <button
+                            onClick={toggleMute}
+                            className={cn(
+                                "flex items-center gap-2 px-4 py-2.5 rounded-full font-bold text-sm transition-all duration-200 border",
+                                isMuted
+                                    ? "bg-red-600 text-white border-red-700 shadow-lg shadow-red-500/30 animate-pulse"
+                                    : "bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200"
+                            )}
+                            title={isMuted ? "Unmute microphone" : "Mute microphone"}
+                        >
+                            <Mic className={cn("w-4 h-4", isMuted && "line-through")} />
+                            {isMuted ? "Unmute" : "Mute Mic"}
+                        </button>
+                    )}
                     <button
                         onClick={status.client === 'READY' ? disconnect : connect}
                         disabled={isConnecting}
@@ -498,14 +679,128 @@ const App: React.FC = () => {
                         {activeTab === 'conversation' ? (
                             <div className="space-y-8 max-w-4xl mx-auto pb-10">
                                 {transcripts.length === 0 && (
-                                    <div className="flex flex-col items-center justify-center py-32 text-slate-300">
-                                        <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-6 border border-slate-200/50">
-                                            <Activity className="w-8 h-8 opacity-40 animate-pulse text-slate-400" />
+                                    status.client === 'IDLE' ? (
+                                        <div className="py-6">
+                                            {/* Hero */}
+                                            <div className="text-center mb-10">
+                                                <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary/5 border border-primary/10 rounded-full text-[10px] font-black text-primary uppercase tracking-widest mb-6">
+                                                    <Zap className="w-3 h-3" /> Open Source · Multi-Agent · Cost-Optimized
+                                                </div>
+                                                <h1 className="text-4xl font-black text-slate-900 leading-tight mb-4">
+                                                    Voice AI That Actually<br />
+                                                    <span className="text-gradient">Makes Economic Sense</span>
+                                                </h1>
+                                                <p className="text-slate-500 text-[15px] font-semibold max-w-xl mx-auto leading-relaxed">
+                                                    Audio-native APIs cost $100–200 per million tokens. Pipecat routes speech through text — cutting costs by <strong className="text-slate-700">40–80×</strong> while keeping full control over every pipeline stage.
+                                                </p>
+                                            </div>
+
+                                            {/* Problem / Solution */}
+                                            <div className="grid grid-cols-2 gap-4 mb-8">
+                                                <div className="bg-red-50 border border-red-100 rounded-2xl p-5">
+                                                    <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-2">The Problem</p>
+                                                    <p className="text-slate-700 font-semibold text-[13px] leading-relaxed">Audio-native APIs process raw waveforms end-to-end. You pay for every millisecond of audio and can't swap any component.</p>
+                                                </div>
+                                                <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5">
+                                                    <p className="text-[9px] font-black text-emerald-600 uppercase tracking-widest mb-2">The Pipecat Way</p>
+                                                    <p className="text-slate-700 font-semibold text-[13px] leading-relaxed">STT → text LLM → TTS. Each stage is independently swappable. Pay only for what you use. 40–80× cheaper.</p>
+                                                </div>
+                                            </div>
+
+                                            {/* What this demo shows */}
+                                            <div className="bg-white rounded-2xl border border-slate-200 p-6 mb-8 shadow-sm">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-5">What This Playground Demonstrates</p>
+                                                <div className="grid grid-cols-3 gap-4">
+                                                    {[
+                                                        { icon: '🤖', title: 'Two-Agent Conversation', desc: 'Velix (host) and Nexa (executor) talk to each other with distinct voices — zero human input needed' },
+                                                        { icon: '🔧', title: 'Live Tool Execution', desc: 'Real-time web search, task management, knowledge retrieval, and interactive UI generation' },
+                                                        { icon: '💰', title: 'Real Cost Comparison', desc: 'Live meter shows Pipecat cost vs audio-native API estimate — in actual dollars per session' },
+                                                    ].map(({ icon, title, desc }) => (
+                                                        <div key={title} className="text-center p-4 rounded-xl bg-slate-50 border border-slate-100 hover:border-primary/20 transition-colors">
+                                                            <div className="text-3xl mb-3">{icon}</div>
+                                                            <p className="text-[11px] font-black text-slate-700 mb-2">{title}</p>
+                                                            <p className="text-[10px] text-slate-500 leading-relaxed">{desc}</p>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+
+                                            {/* Pipeline visualization */}
+                                            <div className="flex items-center justify-center gap-3 mb-6">
+                                                {[
+                                                    { color: 'bg-primary', label: 'Speechmatics STT', sub: 'Speech → Text' },
+                                                    { color: 'bg-secondary', label: 'GPT-4o LLM', sub: 'Text → Reasoning' },
+                                                    { color: 'bg-violet-500', label: 'Cartesia TTS', sub: 'Text → Voice' },
+                                                ].map(({ color, label, sub }, i) => (
+                                                    <React.Fragment key={label}>
+                                                        <div className="text-center">
+                                                            <div className={`w-3 h-3 rounded-full ${color} mx-auto mb-1.5`} />
+                                                            <p className="text-[10px] font-black text-slate-700">{label}</p>
+                                                            <p className="text-[9px] text-slate-400">{sub}</p>
+                                                        </div>
+                                                        {i < 2 && <div className="text-slate-300 font-black text-lg">→</div>}
+                                                    </React.Fragment>
+                                                ))}
+                                            </div>
+
+                                            {/* CTA */}
+                                            <div className="text-center p-5 bg-primary/5 rounded-2xl border border-primary/10">
+                                                <p className="text-[11px] text-slate-600 font-bold">
+                                                    Select <strong className="text-primary">🎬 Autonomous Showcase</strong> in the sidebar → click <strong className="text-primary">Launch Agent</strong>
+                                                </p>
+                                                <p className="text-[10px] text-slate-400 mt-1">Two AI agents will have a full conversation with no human input — watch the side panel fill with live results</p>
+                                            </div>
                                         </div>
-                                        <p className="text-lg font-bold tracking-tight text-slate-400">System stabilized. Awaiting human voice...</p>
-                                        <p className="text-[10px] font-black font-mono mt-2 uppercase tracking-widest opacity-60">Real-time STT Buffer Empty</p>
+                                    ) : (
+                                        <div className="flex flex-col items-center justify-center py-32 text-slate-300">
+                                            <div className="w-16 h-16 rounded-3xl bg-slate-100 flex items-center justify-center mb-6 border border-slate-200/50">
+                                                <Activity className="w-8 h-8 opacity-40 animate-pulse text-slate-400" />
+                                            </div>
+                                            <p className="text-lg font-bold tracking-tight text-slate-400">Pipeline active. Waiting for first voice...</p>
+                                            <p className="text-[10px] font-black font-mono mt-2 uppercase tracking-widest opacity-60">Real-time STT Buffer Ready</p>
+                                        </div>
+                                    )
+                                )}
+                                {/* Showcase context banner — explains what's happening during the demo */}
+                                {selectedRole === 'showcase' && status.client === 'READY' && transcripts.length > 0 && (
+                                    <div className="mb-6 rounded-2xl bg-gradient-to-r from-primary/5 to-violet-50 border border-primary/15 p-5 animate-in fade-in duration-700">
+                                        <div className="flex items-start gap-4">
+                                            <div className="p-2.5 rounded-xl bg-white border border-primary/20 shadow-sm shrink-0">
+                                                <Radio className="w-5 h-5 text-primary animate-pulse" />
+                                            </div>
+                                            <div>
+                                                <p className="text-[11px] font-black text-primary uppercase tracking-widest mb-1">🎬 Autonomous Multi-Agent Showcase — Live</p>
+                                                <p className="text-sm font-semibold text-slate-700 mb-2">
+                                                    Two AI agents are having a real conversation with zero human input — showing why voice AI needs a smarter, cheaper architecture.
+                                                </p>
+                                                <div className="flex flex-wrap gap-3">
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-primary bg-primary/10 px-2.5 py-1 rounded-full">
+                                                        <Cpu className="w-3 h-3" /> Velix — Orchestrator
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-violet-700 bg-violet-100 px-2.5 py-1 rounded-full">
+                                                        <Zap className="w-3 h-3" /> Nexa — Live Executor
+                                                    </span>
+                                                    <span className="flex items-center gap-1.5 text-[10px] font-black text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full">
+                                                        <Activity className="w-3 h-3" /> Results → Right Panel
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="mt-3 pt-3 border-t border-primary/10 grid grid-cols-3 gap-3 text-center">
+                                            {[
+                                                { label: 'Scenario 1', desc: 'Business Intelligence & Sprint Planning' },
+                                                { label: 'Scenario 2', desc: 'Enterprise Insurance Customer Service' },
+                                                { label: 'Why Pipecat', desc: '40–80× cheaper than audio-native APIs' },
+                                            ].map(({ label, desc }) => (
+                                                <div key={label} className="bg-white/60 rounded-xl px-2 py-2 border border-white">
+                                                    <p className="text-[9px] font-black text-primary uppercase tracking-widest">{label}</p>
+                                                    <p className="text-[10px] text-slate-600 font-semibold mt-0.5 leading-tight">{desc}</p>
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 )}
+
                                 {transcripts.map((t, i) => (
                                     <div key={i} className={cn(
                                         "flex flex-col gap-2 group animate-in fade-in slide-in-from-bottom-2 duration-500",
@@ -519,13 +814,21 @@ const App: React.FC = () => {
                                                 <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center border border-primary/20">
                                                     <Cpu className="w-3 h-3 text-primary" />
                                                 </div>
+                                            ) : t.role === 'agent2' ? (
+                                                <div className="w-5 h-5 rounded-full bg-violet-100 flex items-center justify-center border border-violet-200">
+                                                    <Zap className="w-3 h-3 text-violet-600" />
+                                                </div>
                                             ) : (
                                                 <div className="w-5 h-5 rounded-full bg-slate-100 flex items-center justify-center border border-slate-200">
                                                     <div className="w-2 h-2 rounded-full bg-slate-400" />
                                                 </div>
                                             )}
-                                            <span className={cn(t.role === 'assistant' ? "text-primary" : "text-slate-600")}>
-                                                {t.role === 'assistant' ? 'Velix' : 'You'}
+                                            <span className={cn(
+                                                t.role === 'assistant' ? "text-primary"
+                                                : t.role === 'agent2' ? "text-violet-600"
+                                                : "text-slate-600"
+                                            )}>
+                                                {t.role === 'assistant' ? 'Velix' : t.role === 'agent2' ? 'Nexa' : 'You'}
                                             </span>
                                             <span className="opacity-0 group-hover:opacity-100 transition-opacity font-mono tracking-normal text-[9px]">
                                                 {t.timestamp}
@@ -535,6 +838,8 @@ const App: React.FC = () => {
                                             "px-6 py-4 rounded-[2rem] max-w-[85%] text-[15px] leading-relaxed relative transition-all",
                                             t.role === 'user'
                                                 ? "bg-slate-900 text-white rounded-tr-none shadow-lg"
+                                                : t.role === 'agent2'
+                                                ? "bg-violet-50 border border-violet-200 shadow-sm text-violet-900 rounded-tl-none"
                                                 : "bg-white border border-slate-200 shadow-sm text-slate-700 rounded-tl-none"
                                         )}>
                                             <div className="markdown-content whitespace-pre-wrap">
@@ -622,331 +927,467 @@ const App: React.FC = () => {
                                     <span className="leading-tight">{log.message}</span>
                                 </div>
                             ))}
+                            <div ref={logsEndRef} />
                         </div>
                     </div>
                 </main>
 
-                {/* Right Sidebar: Status & Controls */}
-                <aside className="w-96 border-l border-slate-200 flex flex-col p-8 gap-8 bg-slate-50/50 backdrop-blur-md overflow-y-auto">
-                    <section>
-                        <h3 className="text-xs font-black text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
-                            <Activity className="w-4 h-4" /> Network Topology
-                        </h3>
-                        <div className="space-y-6">
-                            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-primary hover:border-r-slate-300 transition-all">
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Local Client</span>
-                                    <span className={cn(
-                                        "text-xs font-bold font-mono px-2 py-0.5 rounded border",
-                                        status.client === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
-                                    )}>{status.client}</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
-                                    <div
-                                        className={cn(
-                                            "h-full transition-all duration-75 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
-                                            status.client === 'READY' ? "bg-secondary" : "bg-primary animate-pulse"
-                                        )}
-                                        style={{ width: status.client === 'READY' ? `${userAudioLevel * 100}%` : '33%' }}
-                                    />
-                                </div>
-                            </div>
+                {/* Right Sidebar: Cost + AI Panel + Controls */}
+                <aside className="w-[480px] border-l border-slate-200 flex flex-col bg-slate-50/50 backdrop-blur-md overflow-y-auto divide-y divide-slate-200">
 
-                            <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm border-l-4 border-l-secondary hover:border-r-slate-300 transition-all">
-                                <div className="flex justify-between items-center mb-3">
-                                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pipecat Bot</span>
-                                    <span className={cn(
-                                        "text-xs font-bold font-mono px-2 py-0.5 rounded border",
-                                        status.agent === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
-                                    )}>{status.agent}</span>
-                                </div>
-                                <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden mt-2">
-                                    <div
-                                        className={cn(
-                                            "h-full transition-all duration-75 ease-out rounded-full shadow-[0_0_8px_rgba(37,99,235,0.3)]",
-                                            status.agent === 'READY' ? "bg-secondary" : "bg-primary animate-pulse"
-                                        )}
-                                        style={{ width: status.agent === 'READY' ? `${botAudioLevel * 100}%` : '33%' }}
-                                    />
-                                </div>
+                    {/* ── Live Cost Optimizer (only when data exists) ── */}
+                    {costData && <section className="bg-white">
+                        <div className="flex items-center justify-between px-5 pt-5 pb-3">
+                            <div className="flex items-center gap-2">
+                                <Zap className="w-4 h-4 text-emerald-500" />
+                                <span className="text-xs font-black uppercase tracking-widest text-slate-700">Live Optimization</span>
                             </div>
+                            <span className="text-[9px] font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                                ACTIVE
+                            </span>
                         </div>
-                    </section>
 
-                    <section>
-                        <h3 className="text-xs font-black text-slate-400 mb-6 flex items-center gap-2 uppercase tracking-widest">
-                            <Settings className="w-4 h-4" /> Local Config
-                        </h3>
-                        <div className="space-y-4">
-                            <div className="space-y-3">
-                                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">Studio Microinterface</label>
-                                <div className="bg-white border border-slate-200 rounded-2xl p-4 flex items-center justify-between group hover:border-primary/40 hover:shadow-sm transition-all cursor-pointer">
-                                    <div className="flex items-center gap-3 min-w-0">
-                                        <div className="p-2 rounded-lg bg-slate-100">
-                                            <Mic className="w-4 h-4 text-primary" />
+                        <div className="px-5 pb-5 space-y-3">
+                                {/* Hero savings */}
+                                <div className="rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 text-white text-center shadow-lg shadow-emerald-500/20">
+                                    <p className="text-[9px] font-black uppercase tracking-widest opacity-80 mb-1">Saved This Session</p>
+                                    <p className="text-3xl font-black tabular-nums tracking-tight">${costData.total_saved.toFixed(5)}</p>
+                                    <p className="text-[10px] font-bold opacity-80 mt-1">{costData.savings_pct}% cheaper than audio-native API</p>
+                                </div>
+
+                                {/* Cost bars */}
+                                <div className="space-y-2">
+                                    <div>
+                                        <div className="flex justify-between text-[9px] font-black mb-1">
+                                            <span className="text-primary">Pipecat Pipeline</span>
+                                            <span className="text-primary tabular-nums">${costData.your_stack.total.toFixed(5)}</span>
                                         </div>
-                                        <span className="text-[11px] font-bold text-slate-700 truncate tracking-tight">System High-Def (Built-in)</span>
+                                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-primary rounded-full transition-all duration-500"
+                                                style={{ width: `${Math.max(2, (costData.your_stack.total / Math.max(costData.realtime_api.total, 0.000001)) * 100)}%` }} />
+                                        </div>
                                     </div>
-                                    <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-primary transition-colors" />
+                                    <div>
+                                        <div className="flex justify-between text-[9px] font-black mb-1">
+                                            <span className="text-red-400">Audio-Native API (est.)</span>
+                                            <span className="text-red-400 tabular-nums">${costData.realtime_api.total.toFixed(5)}</span>
+                                        </div>
+                                        <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                                            <div className="h-full bg-red-400 rounded-full w-full" />
+                                        </div>
+                                    </div>
                                 </div>
-                            </div>
 
-                            <div className="space-y-3 pt-4 border-t border-slate-200/60">
-                                <label className="text-[10px] text-slate-500 font-black uppercase tracking-widest px-1">Custom Room URL (Optional)</label>
-                                <div className="bg-white border border-slate-200 rounded-2xl p-4 group focus-within:border-primary/40 transition-all">
-                                    <input
-                                        type="text"
-                                        value={customRoomUrl}
-                                        onChange={(e) => setCustomRoomUrl(e.target.value)}
-                                        placeholder="https://your-org.daily.co/room"
-                                        className="w-full bg-transparent border-none outline-none text-[11px] font-mono text-slate-700 placeholder:text-slate-300"
-                                    />
+                                {/* Projected hourly */}
+                                {costData.projected_hourly && (
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="rounded-xl bg-primary/5 border border-primary/10 p-2.5 text-center">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pipecat / hr</p>
+                                            <p className="text-sm font-black text-primary tabular-nums">${costData.projected_hourly.your.toFixed(4)}</p>
+                                        </div>
+                                        <div className="rounded-xl bg-red-50 border border-red-100 p-2.5 text-center">
+                                            <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Audio API / hr</p>
+                                            <p className="text-sm font-black text-red-500 tabular-nums">${costData.projected_hourly.realtime.toFixed(4)}</p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* Pipeline breakdown — vendor-neutral */}
+                                <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100 space-y-1">
+                                    <p className="text-[8px] font-black text-primary uppercase tracking-widest mb-2">Pipeline Breakdown</p>
+                                    <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                        <span>STT Engine</span><span>${costData.your_stack.stt.toFixed(5)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                        <span>LLM (Text Model)</span><span>${costData.your_stack.llm.toFixed(5)}</span>
+                                    </div>
+                                    <div className="flex justify-between text-[10px] text-slate-600 font-bold">
+                                        <span>TTS Engine</span><span>${costData.your_stack.tts.toFixed(5)}</span>
+                                    </div>
                                 </div>
-                                <p className="text-[9px] text-slate-400 px-1 leading-tight">
-                                    Paste a room URL from your Dashboard to bypass automated creation issues.
-                                </p>
-                            </div>
 
-                            <div className="form-group" style={{ marginTop: '20px' }}>
-                                <label style={{ display: 'block', fontWeight: '600', marginBottom: '8px', color: '#1e293b' }}>
-                                    AGENT PERSONALITY
-                                </label>
-                                <select
-                                    value={selectedRole}
-                                    onChange={(e) => setSelectedRole(e.target.value as any)}
-                                    style={{
-                                        width: '100%',
-                                        padding: '10px',
-                                        borderRadius: '8px',
-                                        border: '1px solid #e2e8f0',
-                                        background: 'white',
-                                        outline: 'none',
-                                        marginBottom: '10px'
-                                    }}
+                                {/* Stats row */}
+                                <div className="flex gap-2 text-[9px] font-bold text-slate-400 flex-wrap">
+                                    <span>{costData.stats.stt_seconds.toFixed(1)}s audio</span>
+                                    <span>·</span>
+                                    <span>{costData.stats.llm_input_tokens + costData.stats.llm_output_tokens} tokens</span>
+                                    <span>·</span>
+                                    <span>{costData.stats.tts_chars} chars</span>
+                                </div>
+                        </div>
+                    </section>}
+
+                    {/* ── AI Intelligence Display (inline — always visible alongside cost meter) ── */}
+                    {dynamicPanel.isOpen && (
+                        <div className="flex flex-col bg-white">
+                            <div className="flex items-center justify-between px-5 py-3 bg-slate-50 border-b border-slate-100">
+                                <div className="flex items-center gap-2">
+                                    <div className="p-1.5 rounded-lg bg-primary/10 border border-primary/20">
+                                        <PanelRight className="w-3.5 h-3.5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <p className="text-[11px] font-black text-slate-800 uppercase tracking-tight">AI Intelligence Display</p>
+                                        <p className="text-[9px] font-bold text-slate-400 font-mono tracking-widest">{dynamicPanel.name}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => setDynamicPanel(prev => ({ ...prev, isOpen: false }))}
+                                    className="p-1.5 rounded-lg hover:bg-slate-200 transition-colors text-slate-400"
                                 >
-                                    <option value="rag_assistant">Aria — Insurance Voice Assistant (RAG Demo)</option>
-                                    <option value="support">Customer Support Agent</option>
-                                    <option value="travel">Enthusiastic Travel Guide</option>
-                                    <option value="storyteller">Master Storyteller</option>
-                                    <option value="interviewer">Technical Interviewer</option>
-                                    <option value="custom">Custom Prompt...</option>
-                                </select>
-
-                                {selectedRole === 'custom' && (
-                                    <textarea
-                                        placeholder="Enter custom system prompt..."
-                                        value={customPrompt}
-                                        onChange={(e) => setCustomPrompt(e.target.value)}
-                                        style={{
-                                            width: '100%',
-                                            height: '100px',
-                                            padding: '10px',
-                                            borderRadius: '8px',
-                                            border: '1px solid #e2e8f0',
-                                            fontSize: '14px',
-                                            outline: 'none',
-                                            resize: 'none'
-                                        }}
-                                    />
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                            <div className="overflow-y-auto p-5" style={{ maxHeight: '560px' }}>
+                                {dynamicPanel.status === 'thinking' || dynamicPanel.status === 'running' ? (
+                                    <div className="flex flex-col items-center justify-center py-10 text-slate-400 gap-6">
+                                        <div className="relative w-24 h-24 flex items-center justify-center">
+                                            <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
+                                            <div
+                                                className="absolute inset-0 rounded-full border-4 border-primary transition-all duration-1000 ease-out"
+                                                style={{
+                                                    transform: `rotate(${dynamicPanel.progress * 3.6}deg)`,
+                                                    borderTopColor: 'transparent',
+                                                    borderRightColor: 'transparent',
+                                                    borderBottomColor: 'transparent'
+                                                }}
+                                            />
+                                            <div className="flex flex-col items-center">
+                                                <span className="text-xl font-black text-slate-800">{dynamicPanel.progress}%</span>
+                                                <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Progress</span>
+                                            </div>
+                                            <RefreshCw className="absolute -top-1 -right-1 w-5 h-5 animate-spin text-secondary opacity-50" />
+                                        </div>
+                                        <div className="w-full space-y-3 text-center">
+                                            <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 animate-pulse">
+                                                {dynamicPanel.message || "Building..."}
+                                            </p>
+                                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                                                Estimated completion in {dynamicPanel.eta}s
+                                            </p>
+                                            <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                                <div
+                                                    className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-out"
+                                                    style={{ width: `${dynamicPanel.progress}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-3 w-full">
+                                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Architecture</p>
+                                                <div className={cn("h-1 rounded-full", dynamicPanel.progress > 20 ? "bg-secondary" : "bg-slate-200")} />
+                                            </div>
+                                            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                                                <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Implementation</p>
+                                                <div className={cn("h-1 rounded-full", dynamicPanel.progress > 60 ? "bg-secondary" : "bg-slate-200")} />
+                                            </div>
+                                        </div>
+                                    </div>
+                                ) : dynamicPanel.status === 'error' ? (
+                                    <div className="flex flex-col items-center justify-center py-8 text-red-500 gap-3">
+                                        <X className="w-10 h-10 p-2.5 bg-red-50 rounded-2xl" />
+                                        <p className="text-sm font-black uppercase tracking-widest text-center">{dynamicPanel.message}</p>
+                                    </div>
+                                ) : (
+                                    <div className="prose prose-slate max-w-none">
+                                        {dynamicPanel.name === 'translation_log' ? (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 rounded-xl border border-blue-100">
+                                                    <span className="text-sm">🌐</span>
+                                                    <span className="text-[11px] font-black text-blue-700 uppercase tracking-widest">Live Language Detection Active</span>
+                                                </div>
+                                                <div className="markdown-content">
+                                                    <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                        {dynamicPanel.content}
+                                                    </ReactMarkdown>
+                                                </div>
+                                            </div>
+                                        ) : dynamicPanel.name === 'shadow_llm' ? (
+                                            <div className="space-y-3">
+                                                <div className="flex items-center justify-between px-3 py-2 bg-amber-50 rounded-xl border border-amber-100">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-sm">⚡</span>
+                                                        <span className="text-[10px] font-black text-amber-700 uppercase tracking-widest">Cost-Optimized Draft</span>
+                                                    </div>
+                                                    <span className="text-[9px] font-bold text-amber-500 bg-amber-100 px-2 py-0.5 rounded-full">~20x cheaper</span>
+                                                </div>
+                                                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 text-sm text-slate-700 leading-relaxed min-h-[60px] whitespace-pre-wrap">
+                                                    {dynamicPanel.content || <span className="text-slate-400 italic">Waiting for response...</span>}
+                                                </div>
+                                                <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-xl border border-slate-100">
+                                                    <Cpu className="w-3 h-3 text-primary" />
+                                                    <span className="text-[10px] font-bold text-slate-500">Primary agent speaking this answer aloud</span>
+                                                </div>
+                                            </div>
+                                        ) : dynamicPanel.name === 'generate_ui_component' ? (
+                                            <div className="w-full rounded-2xl border border-slate-200 overflow-auto bg-white shadow-inner" style={{ height: '560px' }}>
+                                                {dynamicPanel.content ? (
+                                                    <iframe
+                                                        title="UI Sandbox"
+                                                        srcDoc={dynamicPanel.content}
+                                                        className="w-full border-none"
+                                                        style={{ height: '100%', minHeight: '560px' }}
+                                                        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+                                                    />
+                                                ) : (
+                                                    <div className="flex items-center justify-center h-full text-slate-400 text-sm">Generating UI...</div>
+                                                )}
+                                            </div>
+                                        ) : dynamicPanel.name === 'control_browser' && dynamicPanel.screenshot_b64 ? (
+                                            <div className="space-y-3">
+                                                {dynamicPanel.url && (
+                                                    <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-xl border border-slate-200 text-[11px] font-mono text-slate-500 truncate">
+                                                        <ExternalLink className="w-3 h-3 shrink-0 text-primary" />
+                                                        {dynamicPanel.url}
+                                                    </div>
+                                                )}
+                                                <div className="w-full rounded-2xl border border-slate-200 overflow-hidden shadow-inner bg-white">
+                                                    <img
+                                                        src={`data:image/png;base64,${dynamicPanel.screenshot_b64}`}
+                                                        alt="Browser screenshot"
+                                                        className="w-full h-auto"
+                                                    />
+                                                </div>
+                                                {dynamicPanel.content && (
+                                                    <div className="markdown-content">
+                                                        <ReactMarkdown remarkPlugins={[remarkGfm]} rehypePlugins={[rehypeRaw]}>
+                                                            {dynamicPanel.content}
+                                                        </ReactMarkdown>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="markdown-content">
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                    rehypePlugins={[rehypeRaw]}
+                                                    components={{
+                                                        h1: ({ node, ...props }) => <h1 className="text-sm font-black mb-2 text-slate-900 pb-2 border-b border-slate-100" {...props} />,
+                                                        h2: ({ node, ...props }) => <h2 className="text-sm font-black mb-2 mt-3 text-primary" {...props} />,
+                                                        h3: ({ node, ...props }) => <h3 className="text-xs font-black mb-1.5 mt-2 text-slate-700" {...props} />,
+                                                        ul: ({ node, ...props }) => <ul className="list-disc pl-4 mb-3 space-y-1" {...props} />,
+                                                        ol: ({ node, ...props }) => <ol className="list-decimal pl-4 mb-3 space-y-1" {...props} />,
+                                                        li: ({ node, ...props }) => <li className="text-[12px] text-slate-600 leading-relaxed" {...props} />,
+                                                        p: ({ node, ...props }) => <p className="text-[12px] text-slate-600 leading-relaxed mb-2" {...props} />,
+                                                        strong: ({ node, ...props }) => <strong className="font-bold text-slate-800" {...props} />,
+                                                        code: ({ node, inline, ...props }: any) => (
+                                                            <code className={cn("bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono text-primary", !inline && "block p-3 overflow-x-auto my-3")} {...props} />
+                                                        )
+                                                    }}
+                                                >
+                                                    {dynamicPanel.content}
+                                                </ReactMarkdown>
+                                            </div>
+                                        )}
+                                    </div>
                                 )}
                             </div>
-                        </div>
-                    </section>
-
-                    <div className="mt-auto space-y-4">
-                        {/* Live Cost Comparison Widget */}
-                        <div className="p-5 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden">
-                            <div className="flex items-center gap-2 mb-4">
-                                <Zap className="w-4 h-4 text-secondary" />
-                                <span className="text-xs font-black uppercase tracking-widest text-slate-700">Live Cost Meter</span>
+                            <div className="px-5 py-2.5 border-t border-slate-100 bg-slate-50/30">
+                                <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                    <Activity className="w-3 h-3 text-secondary" />
+                                    Real-time Execution Engine
+                                </div>
                             </div>
-                            {costData ? (
-                                <div className="space-y-3">
-                                    {/* Savings badge */}
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-[10px] font-black text-slate-400 uppercase">Savings vs Realtime API</span>
-                                        <span className="text-sm font-black text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                                            {costData.savings_pct}% cheaper
-                                        </span>
+                        </div>
+                    )}
+
+                    {/* ── Network + Config + Controls ── */}
+                    <div className="p-5 space-y-5 flex-1">
+                        <div>
+                            <h3 className="text-[10px] font-black text-slate-400 mb-4 flex items-center gap-2 uppercase tracking-widest">
+                                <Activity className="w-3.5 h-3.5" /> Network Topology
+                            </h3>
+                            <div className="space-y-3">
+                                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm border-l-4 border-l-primary">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Local Client</span>
+                                        <span className={cn(
+                                            "text-[10px] font-bold font-mono px-2 py-0.5 rounded border",
+                                            status.client === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
+                                        )}>{status.client}</span>
                                     </div>
-                                    {/* Your stack */}
-                                    <div className="bg-slate-50 rounded-2xl p-3 border border-slate-100">
-                                        <p className="text-[9px] font-black text-primary uppercase tracking-widest mb-2">Pipecat Stack</p>
-                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
-                                            <span>STT (Speechmatics)</span>
-                                            <span>${costData.your_stack.stt.toFixed(5)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
-                                            <span>LLM (GPT-4o text)</span>
-                                            <span>${costData.your_stack.llm.toFixed(5)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-[10px] text-slate-600 font-bold">
-                                            <span>TTS (Cartesia)</span>
-                                            <span>${costData.your_stack.tts.toFixed(5)}</span>
-                                        </div>
-                                        <div className="flex justify-between text-[10px] font-black text-slate-800 border-t border-slate-200 pt-1 mt-1">
-                                            <span>Total</span>
-                                            <span className="text-primary">${costData.your_stack.total.toFixed(5)}</span>
-                                        </div>
-                                    </div>
-                                    {/* Realtime API */}
-                                    <div className="bg-red-50 rounded-2xl p-3 border border-red-100">
-                                        <p className="text-[9px] font-black text-red-500 uppercase tracking-widest mb-2">OpenAI Realtime API (est.)</p>
-                                        <div className="flex justify-between text-[10px] font-black text-red-600">
-                                            <span>Audio tokens</span>
-                                            <span>${costData.realtime_api.total.toFixed(5)}</span>
-                                        </div>
-                                    </div>
-                                    {/* Stats */}
-                                    <div className="flex gap-2 text-[9px] font-bold text-slate-400">
-                                        <span>{costData.stats.stt_seconds.toFixed(1)}s audio</span>
-                                        <span>·</span>
-                                        <span>{costData.stats.llm_input_tokens + costData.stats.llm_output_tokens} tokens</span>
-                                        <span>·</span>
-                                        <span>{costData.stats.tts_chars} chars</span>
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={cn("h-full transition-all duration-75 ease-out rounded-full", status.client === 'READY' ? "bg-secondary" : "bg-primary animate-pulse")}
+                                            style={{ width: status.client === 'READY' ? `${userAudioLevel * 100}%` : '33%' }}
+                                        />
                                     </div>
                                 </div>
-                            ) : (
-                                <div className="text-center py-4">
-                                    <p className="text-[10px] text-slate-400 font-bold">Start a session to see live cost comparison</p>
-                                    <p className="text-[9px] text-slate-300 mt-1">Pipecat vs OpenAI Realtime API</p>
+                                <div className="bg-white rounded-2xl p-4 border border-slate-200 shadow-sm border-l-4 border-l-secondary">
+                                    <div className="flex justify-between items-center mb-2">
+                                        <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Pipecat Bot</span>
+                                        <span className={cn(
+                                            "text-[10px] font-bold font-mono px-2 py-0.5 rounded border",
+                                            status.agent === 'READY' ? "text-secondary bg-secondary/10 border-secondary/20" : "text-primary bg-primary/10 border-primary/20"
+                                        )}>{status.agent}</span>
+                                    </div>
+                                    <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div
+                                            className={cn("h-full transition-all duration-75 ease-out rounded-full", status.agent === 'READY' ? "bg-secondary" : "bg-primary animate-pulse")}
+                                            style={{ width: status.agent === 'READY' ? `${botAudioLevel * 100}%` : '33%' }}
+                                        />
+                                    </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            <h3 className="text-[10px] font-black text-slate-400 flex items-center gap-2 uppercase tracking-widest">
+                                <Settings className="w-3.5 h-3.5" /> Config
+                            </h3>
+                            <div className="bg-white border border-slate-200 rounded-2xl p-3 group focus-within:border-primary/40 transition-all">
+                                <input
+                                    type="text"
+                                    value={customRoomUrl}
+                                    onChange={(e) => setCustomRoomUrl(e.target.value)}
+                                    placeholder="https://your-org.daily.co/room  (optional)"
+                                    className="w-full bg-transparent border-none outline-none text-[11px] font-mono text-slate-700 placeholder:text-slate-300"
+                                />
+                            </div>
+                            <select
+                                value={selectedRole}
+                                onChange={(e) => setSelectedRole(e.target.value as any)}
+                                className="w-full p-2.5 rounded-xl border border-slate-200 bg-white text-[11px] font-semibold text-slate-700 outline-none"
+                            >
+                                <option value="showcase">🎬 Autonomous Showcase (Velix ↔ Nexa)</option>
+                                <option value="voice_demo">🤖 Two-Agent Demo (Velix + Nexa)</option>
+                                <option value="demo">🎯 Aria — Interactive Demo Guide</option>
+                                <option value="qa_demo">💬 Aria — Live Q&A Demo</option>
+                                <option value="rag_assistant">Aria — Insurance Voice Assistant (RAG)</option>
+                                <option value="multilingual_support">🌐 Multilingual Support Agent</option>
+                                <option value="model_showdown">⚖️ Model Showdown (GPT-4o vs Mini)</option>
+                                <option value="support">Customer Support Agent</option>
+                                <option value="travel">Enthusiastic Travel Guide</option>
+                                <option value="storyteller">Master Storyteller</option>
+                                <option value="interviewer">Technical Interviewer</option>
+                                <option value="custom">Custom Prompt...</option>
+                            </select>
+                            {selectedRole === 'custom' && (
+                                <textarea
+                                    placeholder="Enter custom system prompt..."
+                                    value={customPrompt}
+                                    onChange={(e) => setCustomPrompt(e.target.value)}
+                                    className="w-full h-24 p-3 rounded-xl border border-slate-200 text-[11px] outline-none resize-none font-mono text-slate-700"
+                                />
                             )}
                         </div>
 
-                        <div className="p-6 rounded-3xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-all">
-                            <div className="absolute right-0 top-0 w-24 h-24 bg-primary/5 rounded-full -mr-12 -mt-12 blur-2xl group-hover:bg-primary/10 transition-colors" />
-                            <div className="flex items-center gap-3 mb-3">
-                                <Shield className="w-5 h-5 text-primary" />
-                                <span className="text-xs font-black uppercase tracking-widest text-slate-700">Enterprise Security</span>
+                        {/* Quick Demo — multilingual */}
+                        {selectedRole === 'multilingual_support' && status.client === 'READY' && (
+                            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Quick Demo</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {[
+                                        { emoji: '🇪🇸', label: 'Speak Spanish', prompt: 'Hola, tengo un problema con mi factura. ¿Pueden ayudarme?' },
+                                        { emoji: '🇫🇷', label: 'Speak French', prompt: 'Bonjour, je voudrais des informations sur mon compte.' },
+                                        { emoji: '🔧', label: 'Tech Support', prompt: 'My device is not working, please transfer me to technical support.' },
+                                        { emoji: '💳', label: 'Billing', prompt: 'I need to dispute a charge. Please transfer me to billing.' },
+                                        { emoji: '⬆️', label: 'Escalate', prompt: 'I am very unhappy and want to speak with a manager.' },
+                                    ].map(({ emoji, label, prompt }) => (
+                                        <button key={label}
+                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group"
+                                        >
+                                            <span className="text-base">{emoji}</span>
+                                            <span className="text-[10px] font-black text-slate-600 group-hover:text-primary">{label}</span>
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            <p className="text-[10px] text-slate-500 leading-relaxed font-bold tracking-tight">
-                                Session isolated with SHA-256 HMAC and SSL encryption. Real-time media streams bypass public buffers via Daily Mesh.
+                        )}
+
+                        {/* Quick Demo — voice_demo category picker */}
+                        {selectedRole === 'voice_demo' && status.client === 'READY' && (() => {
+                            const firePrompt = async (prompt: string) => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); };
+                            const categories: Record<string, { icon: string; label: string; bg: string; border: string; text: string; options: { label: string; prompt: string }[] }> = {
+                                web_search: { icon: '🌐', label: 'Web Search', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', options: [{ label: 'Latest AI agent frameworks', prompt: 'Search the web for the latest news and developments in AI agent frameworks in 2025.' }, { label: 'Pipecat voice AI updates', prompt: 'Search the web for what Pipecat voice AI framework is and its latest features.' }, { label: 'Voice AI cost trends', prompt: 'Search the web for voice AI cost optimization benchmarks and cost comparisons in 2025.' }] },
+                                tasks: { icon: '📋', label: 'Task Organizer', bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', options: [{ label: 'Plan my sprint', prompt: 'Add these sprint tasks: design system prompt, test voice pipeline, optimize latency, write demo script, record video.' }, { label: 'Add weekly errands', prompt: 'Add these personal tasks: grocery shopping, dentist appointment, pay bills, review pull requests, team sync.' }, { label: 'Show & complete tasks', prompt: 'Show my task list, then mark the first task as complete.' }] },
+                                insurance: { icon: '🏥', label: 'Insurance Q&A', bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-700', options: [{ label: 'Home flood coverage', prompt: 'What does home insurance cover for water damage and flooding? Search the knowledge base.' }, { label: 'Auto insurance deductibles', prompt: 'Explain how auto insurance deductibles work and what factors affect my premium.' }, { label: 'Life insurance types', prompt: 'What are the different types of life insurance and how do I choose the right one?' }] },
+                                build: { icon: '⚙️', label: 'Build an App', bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-700', options: [{ label: 'Task manager', prompt: 'Build a beautiful task manager app with priority levels high medium low, due dates, and a progress bar.' }, { label: 'Insurance calculator', prompt: 'Build an insurance premium calculator with inputs for age, coverage type, and vehicle type.' }, { label: 'Cost comparison dashboard', prompt: 'Build a dashboard comparing AI API costs between Pipecat stack and audio-native APIs with bar charts.' }] },
+                            };
+                            return (
+                                <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm space-y-3">
+                                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Demo Categories</p>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        {Object.entries(categories).map(([key, cat]) => (
+                                            <button key={key} onClick={() => setActiveCategory(activeCategory === key ? null : key)}
+                                                className={cn("flex flex-col items-center gap-1 px-3 py-2.5 rounded-xl border text-center transition-all", activeCategory === key ? `${cat.bg} ${cat.border} ${cat.text}` : 'bg-slate-50 border-slate-200 text-slate-600 hover:border-slate-300')}>
+                                                <span className="text-lg">{cat.icon}</span>
+                                                <span className="text-[9px] font-black uppercase tracking-wide">{cat.label}</span>
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {activeCategory && categories[activeCategory] && (
+                                        <div className="space-y-1.5">
+                                            {categories[activeCategory].options.map(({ label, prompt }) => (
+                                                <button key={label} onClick={() => firePrompt(prompt)}
+                                                    className={cn("w-full text-left px-3 py-2.5 rounded-xl border text-[10px] font-bold transition-all hover:shadow-sm", categories[activeCategory].bg, categories[activeCategory].border, categories[activeCategory].text)}>
+                                                    → {label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })()}
+
+                        {/* Quick Demo — model showdown */}
+                        {selectedRole === 'model_showdown' && status.client === 'READY' && (
+                            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Quick Demo</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {[
+                                        { emoji: '🧠', label: 'Explain Quantum', prompt: 'Explain quantum entanglement in simple terms.' },
+                                        { emoji: '💰', label: 'Startup Costs', prompt: 'What are the main costs to consider when launching a SaaS startup?' },
+                                        { emoji: '🤔', label: 'Reasoning Test', prompt: 'A train leaves at 9:15am at 60mph. It travels 2.5 hours. What time does it arrive and how far did it go?' },
+                                        { emoji: '🌍', label: 'Creative Task', prompt: 'Write a 3-sentence story about a robot who discovers music for the first time.' },
+                                    ].map(({ emoji, label, prompt }) => (
+                                        <button key={label}
+                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group">
+                                            <span className="text-base">{emoji}</span>
+                                            <span className="text-[10px] font-black text-slate-600 group-hover:text-primary">{label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Quick Demo — demo mode */}
+                        {selectedRole === 'demo' && status.client === 'READY' && (
+                            <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-sm">
+                                <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-3">Quick Demo</p>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {[
+                                        { emoji: '🏗️', label: 'Architecture', prompt: 'Show me the Pipecat pipeline architecture diagram with all the components.' },
+                                        { emoji: '🔍', label: 'Knowledge Search', prompt: 'Search the knowledge base for auto insurance coverage types and deductibles.' },
+                                        { emoji: '⚙️', label: 'Build UI', prompt: 'Build me an interactive insurance premium calculator app with inputs for age, vehicle type, and coverage level.' },
+                                        { emoji: '🌐', label: 'Browser Control', prompt: 'Go to google.com and search for Pipecat voice AI framework.' },
+                                        { emoji: '💰', label: 'Show Cost Savings', prompt: 'Explain the cost savings of using Pipecat versus audio-native APIs and show a comparison table.' },
+                                    ].map(({ emoji, label, prompt }) => (
+                                        <button key={label}
+                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group">
+                                            <span className="text-base">{emoji}</span>
+                                            <span className="text-[10px] font-black text-slate-600 group-hover:text-primary">{label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-sm relative overflow-hidden group hover:border-primary/20 transition-all">
+                            <div className="absolute right-0 top-0 w-20 h-20 bg-primary/5 rounded-full -mr-10 -mt-10 blur-2xl" />
+                            <div className="flex items-center gap-2 mb-2">
+                                <Shield className="w-4 h-4 text-primary" />
+                                <span className="text-[10px] font-black uppercase tracking-widest text-slate-700">Enterprise Security</span>
+                            </div>
+                            <p className="text-[10px] text-slate-500 leading-relaxed font-bold">
+                                Session isolated with SHA-256 HMAC + SSL. Real-time streams bypass public buffers via Daily Mesh.
                             </p>
                         </div>
                     </div>
                 </aside>
             </div>
-            {/* Dynamic Display Side Panel */}
-            {dynamicPanel.isOpen && (
-                <div className="fixed top-0 right-0 w-[450px] h-full bg-white shadow-2xl z-50 animate-in slide-in-from-right duration-500 border-l border-slate-200 flex flex-col">
-                    <div className="flex items-center justify-between p-6 border-b border-slate-100 bg-slate-50/50">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
-                                <PanelRight className="w-5 h-5 text-primary" />
-                            </div>
-                            <div>
-                                <h2 className="text-sm font-black text-slate-800 uppercase tracking-tight">AI Intelligence Display</h2>
-                                <p className="text-[10px] font-bold text-slate-400 font-mono tracking-widest">{dynamicPanel.name}</p>
-                            </div>
-                        </div>
-                        <button
-                            onClick={() => setDynamicPanel(prev => ({ ...prev, isOpen: false }))}
-                            className="p-2 rounded-xl hover:bg-slate-200 transition-colors text-slate-400"
-                        >
-                            <X className="w-5 h-5" />
-                        </button>
-                    </div>
-
-                    <div className="flex-1 overflow-y-auto p-8 scrollbar-hide">
-                        {dynamicPanel.status === 'thinking' || dynamicPanel.status === 'running' ? (
-                            <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-8 animate-in fade-in zoom-in duration-500">
-                                <div className="relative w-32 h-32 flex items-center justify-center">
-                                    <div className="absolute inset-0 rounded-full border-4 border-slate-100" />
-                                    <div
-                                        className="absolute inset-0 rounded-full border-4 border-primary transition-all duration-1000 ease-out"
-                                        style={{
-                                            clipPath: `inset(0 0 0 0)`,
-                                            transform: `rotate(${dynamicPanel.progress * 3.6}deg)`,
-                                            borderTopColor: 'transparent',
-                                            borderRightColor: 'transparent',
-                                            borderBottomColor: 'transparent'
-                                        }}
-                                    />
-                                    <div className="flex flex-col items-center">
-                                        <span className="text-2xl font-black text-slate-800">{dynamicPanel.progress}%</span>
-                                        <span className="text-[8px] font-black uppercase tracking-widest text-slate-400">Progress</span>
-                                    </div>
-                                    <RefreshCw className="absolute -top-2 -right-2 w-6 h-6 animate-spin text-secondary opacity-50" />
-                                </div>
-
-                                <div className="w-full space-y-4 px-4 text-center">
-                                    <div className="space-y-1">
-                                        <p className="text-xs font-black uppercase tracking-[0.2em] text-slate-800 animate-pulse">
-                                            {dynamicPanel.message || "Velix is constructing the UI..."}
-                                        </p>
-                                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-                                            Estimated completion in {dynamicPanel.eta}s
-                                        </p>
-                                    </div>
-
-                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden border border-slate-200/50">
-                                        <div
-                                            className="h-full bg-gradient-to-r from-primary to-secondary transition-all duration-1000 ease-out shadow-[0_0_12px_rgba(37,99,235,0.2)]"
-                                            style={{ width: `${dynamicPanel.progress}%` }}
-                                        />
-                                    </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 w-full px-4">
-                                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Architecture</p>
-                                        <div className={cn("h-1 rounded-full", dynamicPanel.progress > 20 ? "bg-secondary" : "bg-slate-200")} />
-                                    </div>
-                                    <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-                                        <p className="text-[9px] font-black text-slate-400 uppercase mb-1">Implementation</p>
-                                        <div className={cn("h-1 rounded-full", dynamicPanel.progress > 60 ? "bg-secondary" : "bg-slate-200")} />
-                                    </div>
-                                </div>
-                            </div>
-                        ) : dynamicPanel.status === 'error' ? (
-                            <div className="flex flex-col items-center justify-center h-full text-red-500 gap-4">
-                                <X className="w-12 h-12 p-3 bg-red-50 rounded-2xl" />
-                                <p className="text-sm font-black uppercase tracking-widest text-center">{dynamicPanel.message}</p>
-                            </div>
-                        ) : (
-                            <div className="prose prose-slate max-w-none">
-                                {dynamicPanel.name === 'generate_ui_component' ? (
-                                    <div className="w-full h-[500px] rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-inner">
-                                        <iframe
-                                            title="UI Sandbox"
-                                            srcDoc={dynamicPanel.content}
-                                            className="w-full h-full border-none"
-                                            sandbox="allow-scripts"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="markdown-content">
-                                        <ReactMarkdown
-                                            remarkPlugins={[remarkGfm]}
-                                            rehypePlugins={[rehypeRaw]}
-                                            components={{
-                                                h1: ({ node, ...props }) => <h1 className="text-xl font-black mb-4 text-slate-900" {...props} />,
-                                                h2: ({ node, ...props }) => <h2 className="text-lg font-bold mb-3 mt-6 text-slate-800" {...props} />,
-                                                ul: ({ node, ...props }) => <ul className="list-disc pl-5 mb-4 space-y-2" {...props} />,
-                                                li: ({ node, ...props }) => <li className="text-sm text-slate-600" {...props} />,
-                                                p: ({ node, ...props }) => <p className="text-sm text-slate-600 leading-relaxed mb-4" {...props} />,
-                                                code: ({ node, inline, ...props }: any) => (
-                                                    <code className={cn("bg-slate-100 px-1.5 py-0.5 rounded text-xs font-mono text-primary", !inline && "block p-4 overflow-x-auto my-4")} {...props} />
-                                                )
-                                            }}
-                                        >
-                                            {dynamicPanel.content}
-                                        </ReactMarkdown>
-                                    </div>
-                                )}
-                            </div>
-                        )}
-                    </div>
-
-                    <div className="p-6 border-t border-slate-100 bg-slate-50/30">
-                        <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                            <Activity className="w-3 h-3 text-secondary" />
-                            Real-time Execution Engine
-                        </div>
-                    </div>
-                </div>
-            )}
             <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
     );
