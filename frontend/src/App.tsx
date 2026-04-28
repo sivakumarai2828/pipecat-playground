@@ -191,7 +191,7 @@ const App: React.FC = () => {
     useEffect(() => {
         // Only run on mount
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+        const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host);
         const socket = new WebSocket(`${protocol}//${host}/ws/events`);
         ws.current = socket;
 
@@ -334,6 +334,12 @@ const App: React.FC = () => {
         setIsConnecting(true);
         setStatus({ client: 'CONNECTING', agent: 'CONNECTING' });
         setErrorDialog(null);
+        // Pre-warm audio within user gesture context to satisfy browser autoplay policy
+        if (audioRef.current) {
+            audioRef.current.muted = true;
+            audioRef.current.play().catch(() => {});
+            audioRef.current.muted = false;
+        }
 
         // Ensure WebSocket is connected
         if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
@@ -347,7 +353,7 @@ const App: React.FC = () => {
             let room_url = customRoomUrl.trim();
 
             if (!room_url) {
-                const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+                const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host);
                 const resp = await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/session/create`, { method: 'POST' });
                 const data = await resp.json();
                 room_url = data.room_url;
@@ -423,7 +429,7 @@ const App: React.FC = () => {
                 "- NEVER mention tool names to the user.",
             ].join("\n");
 
-            const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host;
+            const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host);
             await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/agent/start`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1284,7 +1290,7 @@ const App: React.FC = () => {
                                         { emoji: '⬆️', label: 'Escalate', prompt: 'I am very unhappy and want to speak with a manager.' },
                                     ].map(({ emoji, label, prompt }) => (
                                         <button key={label}
-                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            onClick={async () => { const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host); await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
                                             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group"
                                         >
                                             <span className="text-base">{emoji}</span>
@@ -1297,7 +1303,7 @@ const App: React.FC = () => {
 
                         {/* Quick Demo — voice_demo category picker */}
                         {selectedRole === 'voice_demo' && status.client === 'READY' && (() => {
-                            const firePrompt = async (prompt: string) => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); };
+                            const firePrompt = async (prompt: string) => { const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host); await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); };
                             const categories: Record<string, { icon: string; label: string; bg: string; border: string; text: string; options: { label: string; prompt: string }[] }> = {
                                 web_search: { icon: '🌐', label: 'Web Search', bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', options: [{ label: 'Latest AI agent frameworks', prompt: 'Search the web for the latest news and developments in AI agent frameworks in 2025.' }, { label: 'Pipecat voice AI updates', prompt: 'Search the web for what Pipecat voice AI framework is and its latest features.' }, { label: 'Voice AI cost trends', prompt: 'Search the web for voice AI cost optimization benchmarks and cost comparisons in 2025.' }] },
                                 tasks: { icon: '📋', label: 'Task Organizer', bg: 'bg-violet-50', border: 'border-violet-200', text: 'text-violet-700', options: [{ label: 'Plan my sprint', prompt: 'Add these sprint tasks: design system prompt, test voice pipeline, optimize latency, write demo script, record video.' }, { label: 'Add weekly errands', prompt: 'Add these personal tasks: grocery shopping, dentist appointment, pay bills, review pull requests, team sync.' }, { label: 'Show & complete tasks', prompt: 'Show my task list, then mark the first task as complete.' }] },
@@ -1342,7 +1348,7 @@ const App: React.FC = () => {
                                         { emoji: '🌍', label: 'Creative Task', prompt: 'Write a 3-sentence story about a robot who discovers music for the first time.' },
                                     ].map(({ emoji, label, prompt }) => (
                                         <button key={label}
-                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            onClick={async () => { const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host); await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
                                             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group">
                                             <span className="text-base">{emoji}</span>
                                             <span className="text-[10px] font-black text-slate-600 group-hover:text-primary">{label}</span>
@@ -1365,7 +1371,7 @@ const App: React.FC = () => {
                                         { emoji: '💰', label: 'Show Cost Savings', prompt: 'Explain the cost savings of using Pipecat versus audio-native APIs and show a comparison table.' },
                                     ].map(({ emoji, label, prompt }) => (
                                         <button key={label}
-                                            onClick={async () => { const host = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host; await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
+                                            onClick={async () => { const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host); await fetch(`http://${host}/inject_message`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: prompt }) }); }}
                                             className="flex items-center gap-2 px-3 py-2 rounded-xl bg-slate-50 hover:bg-primary/5 border border-slate-200 hover:border-primary/30 text-left transition-all group">
                                             <span className="text-base">{emoji}</span>
                                             <span className="text-[10px] font-black text-slate-600 group-hover:text-primary">{label}</span>
@@ -1388,7 +1394,7 @@ const App: React.FC = () => {
                     </div>
                 </aside>
             </div>
-            <audio ref={audioRef} style={{ display: 'none' }} />
+            <audio ref={audioRef} autoPlay playsInline style={{ display: 'none' }} />
         </div>
     );
 };
