@@ -412,30 +412,7 @@ const App: React.FC = () => {
                 setBotAudioLevel(maxLevel);
             });
 
-            await co.startLocalAudioLevelObserver();
-            await co.startRemoteParticipantsAudioLevelObserver();
-
-            setLogs(prev => [...prev, { message: 'Joined Daily Room', type: 'info', timestamp: new Date().toLocaleTimeString() }]);
-
-            const base_prompt = selectedRole === 'custom' ? customPrompt : ROLE_PRESETS[selectedRole as keyof typeof ROLE_PRESETS];
-            const is_demo = selectedRole === 'demo';
-            const system_prompt = is_demo ? base_prompt : [
-                base_prompt,
-                "### RULES:",
-                "- BE EXTREMELY CONCISE verbally. 2-3 sentences max per response.",
-                "- NEVER speak markdown, code, tables, or bullet points aloud.",
-                "- For lists or structured data: call show_text_on_screen FIRST, then give a 1-sentence verbal summary.",
-                "- For interactive apps: call generate_ui_component FIRST.",
-                "- NEVER mention tool names to the user.",
-            ].join("\n");
-
-            const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host);
-            await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/agent/start`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ room_url, system_prompt, role: selectedRole, auto_start: selectedRole === 'demo' || selectedRole === 'qa_demo' || selectedRole === 'voice_demo' || selectedRole === 'showcase' })
-            });
-
+            // Register track-started BEFORE agent/start so we never miss the event
             co.on('track-started', (evt) => {
                 const participant = evt.participant;
                 if (!participant) return;
@@ -460,6 +437,30 @@ const App: React.FC = () => {
                 if (evt.participant.user_name === 'Pipecat Agent') {
                     setStatus(prev => ({ ...prev, agent: 'READY' }));
                 }
+            });
+
+            await co.startLocalAudioLevelObserver();
+            await co.startRemoteParticipantsAudioLevelObserver();
+
+            setLogs(prev => [...prev, { message: 'Joined Daily Room', type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+
+            const base_prompt = selectedRole === 'custom' ? customPrompt : ROLE_PRESETS[selectedRole as keyof typeof ROLE_PRESETS];
+            const is_demo = selectedRole === 'demo';
+            const system_prompt = is_demo ? base_prompt : [
+                base_prompt,
+                "### RULES:",
+                "- BE EXTREMELY CONCISE verbally. 2-3 sentences max per response.",
+                "- NEVER speak markdown, code, tables, or bullet points aloud.",
+                "- For lists or structured data: call show_text_on_screen FIRST, then give a 1-sentence verbal summary.",
+                "- For interactive apps: call generate_ui_component FIRST.",
+                "- NEVER mention tool names to the user.",
+            ].join("\n");
+
+            const host = import.meta.env.VITE_BACKEND_HOST || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'localhost:7860' : window.location.host);
+            await fetch(`http${window.location.protocol === 'https:' ? 's' : ''}://${host}/agent/start`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ room_url, system_prompt, role: selectedRole, auto_start: selectedRole === 'demo' || selectedRole === 'qa_demo' || selectedRole === 'voice_demo' || selectedRole === 'showcase' })
             });
         } catch (err: any) {
             console.error(err);
