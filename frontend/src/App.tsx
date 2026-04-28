@@ -412,22 +412,41 @@ const App: React.FC = () => {
                 setBotAudioLevel(maxLevel);
             });
 
+            const attachBotAudio = (participant: any, source: string) => {
+                if (!participant || participant.local) return;
+                const audioTrack = participant?.tracks?.audio?.persistentTrack
+                    ?? participant?.tracks?.audio?.track;
+                if (audioTrack && audioRef.current) {
+                    console.log(`[${source}] Attaching bot audio:`, participant.user_name);
+                    const stream = new MediaStream();
+                    stream.addTrack(audioTrack);
+                    audioRef.current.srcObject = stream;
+                    audioRef.current.play().catch(e => console.error('Audio play failed:', e));
+                    setLogs(prev => [...prev, { message: `Audio track started: ${participant.user_name}`, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+                }
+            };
+
             // Register track-started BEFORE agent/start so we never miss the event
             co.on('track-started', (evt) => {
                 const participant = evt.participant;
-                if (!participant) return;
-                console.log('Track started:', evt.track.kind, participant.user_name);
-                if (participant.local) return;
-                if (evt.track.kind === 'audio' && audioRef.current) {
-                    audioRef.current.srcObject = new MediaStream([evt.track]);
-                    audioRef.current.play().catch(e => console.error('Audio play failed:', e));
-                    setLogs(prev => [...prev, { message: `Audio track started: ${participant.user_name}`, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+                if (!participant || participant.local) return;
+                console.log('track-started:', evt.track?.kind, participant.user_name);
+                if (evt.track?.kind === 'audio') {
+                    attachBotAudio(participant, 'track-started');
+                }
+            });
+
+            co.on('participant-updated', (evt) => {
+                const participant = evt.participant;
+                if (!participant || participant.local) return;
+                if (participant?.tracks?.audio?.state === 'playable') {
+                    attachBotAudio(participant, 'participant-updated');
                 }
             });
 
             co.on('track-stopped', (evt) => {
-                console.log('Track stopped:', evt.track.kind);
-                if (evt.track.kind === 'audio' && audioRef.current) {
+                console.log('Track stopped:', evt.track?.kind);
+                if (evt.track?.kind === 'audio' && audioRef.current) {
                     audioRef.current.srcObject = null;
                 }
             });
@@ -436,6 +455,8 @@ const App: React.FC = () => {
                 console.log('Participant joined:', evt.participant.user_name);
                 if (evt.participant.user_name === 'Pipecat Agent') {
                     setStatus(prev => ({ ...prev, agent: 'READY' }));
+                    // Attach audio if track already available at join time
+                    attachBotAudio(evt.participant, 'participant-joined');
                 }
             });
 
