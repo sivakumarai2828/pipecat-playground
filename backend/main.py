@@ -860,55 +860,56 @@ async def _run_showcase_sequence(task):
     await asyncio.sleep(3)
 
     # ── Opening ──────────────────────────────────────────────────────────────
-    await a1("Welcome to Pipecat Playground. This demo shows what a real voice AI pipeline looks like — modular, composable, and dramatically cheaper than audio-native APIs.")
-    await a1("I'm Velix, the orchestration agent. Nexa is the live executor — you'll hear both of us, and see every tool result appear in the panel on the right.")
-    await a1("Two real business scenarios. Zero human input. Nexa, ready?")
-    await a2("Ready. Let's show what a real multi-agent pipeline looks like.")
-    await asyncio.sleep(1)
+    await a1("Hey — welcome. I'm Velix. I orchestrate the pipeline. Nexa handles the actual execution. Together we're going to show you what a real production voice AI stack looks like.")
+    await asyncio.sleep(0.3)
+    await a1("Two live business scenarios. Zero human input. Nexa — you warmed up?")
+    await a2("Ready when you are.")
+    await asyncio.sleep(0.8)
 
     # ═══════════════════════════════════════════════════════════════════════
     # SCENARIO 1 — Business Intelligence & Sprint Planning
     # ═══════════════════════════════════════════════════════════════════════
-    await a1("Scenario one. We're prepping a client pitch on voice AI. Nexa, what's actually happening in the space right now?")
+    await a1("Alright. Scenario one — we're prepping a client pitch on voice AI. Nexa, what's actually moving in the space right now?")
     await a2(
-        "Pulling live intel.",
+        "Pulling live intel right now.",
         capability="web_search",
         tool_task="Search the web for the latest news and breakthroughs in voice AI, AI agent frameworks, and conversational AI in 2025. Find top 5 real announcements or product launches. Include company names, what they launched, and why it matters.",
         tool_timeout=22,
-        after="Got it. Three major moves this week — new voice API launches, a Pipecat framework update, and a big latency benchmark drop. Full breakdown is in the panel."
+        after="Three major moves this week — new voice API launches, a Pipecat framework update, and a big latency benchmark drop. Full breakdown is in the panel."
     )
-    await a1("Good. Add those to our prep board. And add: run a cost analysis before the meeting.")
+    await a1("Perfect. Let's get that organized — add those to the prep board, and flag a cost analysis too. Client's definitely going to ask.")
     await a2(
         "On it.",
         capability="task_organizer",
         tool_task="Add these four tasks: 1. Review latest voice AI announcements from this week. 2. Benchmark STT latency across Speechmatics, Deepgram, and Whisper. 3. Prepare Pipecat architecture slide. 4. Run cost analysis — Pipecat pipeline versus audio-native APIs. Then list all tasks.",
         tool_timeout=14,
-        after="Four tasks on the board. Cost analysis is item four — I'll flag it."
+        after="Four tasks logged. Cost analysis is flagged as item four."
     )
-    await a1("The client specifically asked about cost. Give me the real numbers.")
+    await a1("Good. Speaking of cost — give me the real numbers. What's the actual difference between a modular pipeline and going audio-native?")
     await a2(
         "Checking the knowledge base.",
         capability="knowledge_base",
         tool_task="Search for detailed information about voice AI cost comparison — why a modular STT plus LLM plus TTS pipeline is dramatically cheaper than audio-native APIs like GPT-4o Audio. Include specific dollar amounts per million tokens and the cost multiplier difference.",
         tool_timeout=14,
-        after="Modular pipeline runs three to five dollars per million tokens. Audio-native APIs are one hundred to two hundred. That's a forty-times difference. Numbers and breakdown are on screen."
+        after="Modular pipeline runs three to five dollars per million tokens. Audio-native APIs — one hundred to two hundred. Forty-times cheaper. Full breakdown is on screen."
     )
+    await a1("Forty times. That's the slide right there.")
     await asyncio.sleep(2)
 
     # ═══════════════════════════════════════════════════════════════════════
     # SCENARIO 2 — Enterprise Insurance Customer Service
     # ═══════════════════════════════════════════════════════════════════════
-    await a1("Scenario two. Enterprise customer service. A homeowner calls in — they just had water damage and want to know what their policy covers. Nexa, handle it.")
+    await a1("Okay, scenario two. Enterprise customer service. A homeowner just had water damage — they're calling in, panicked, want to know what their policy actually covers. Nexa, take the call.")
     await a2(
-        "Checking the policy database.",
+        "On it — pulling the policy database now.",
         capability="knowledge_base",
         tool_task="Search the insurance knowledge base for what a standard HO-3 homeowner policy covers for water damage, burst pipes, and flooding. What is covered versus what is excluded? Include specific examples and the distinction between water damage types.",
         tool_timeout=15,
-        after="Standard HO-3 covers sudden water intrusion — burst pipes, appliance leaks, roof damage from rain. Floods and groundwater require a separate federal policy. Full policy breakdown is on screen."
+        after="HO-3 covers sudden water intrusion — burst pipes, appliance leaks, storm damage through the roof. Floods and groundwater need a separate federal policy. Full breakdown is on screen."
     )
-    await a1("Exactly what they needed. Now they want a reference card to keep. Build it.")
+    await a1("That's exactly what they needed to hear. Now they want something to keep — build them a reference card.")
     await a2(
-        "Building a professional claims reference guide now. Ready in about fifteen seconds.",
+        "Building it now. Give me about fifteen seconds.",
         capability="ui_builder",
         tool_task="""Build a polished insurance claims reference card as a single-page HTML app. Use Tailwind CSS via CDN. Layout: white background, light gray sidebar on left with navigation, main content area on right.
 
@@ -941,12 +942,12 @@ Include these four sections (show all content expanded by default — no accordi
 
 Add a blue "Print" button top-right. Use clean sans-serif font. Professional look — like a real insurance company PDF made into a web page. Each section has a colored left border stripe and an icon emoji.""",
         tool_timeout=12,
-        wait_for_ui=False,  # returns fast; actual render continues async
+        wait_for_ui=False,
     )
     # Velix fills silence while GPT-4o renders the card
-    await a1("This is voice-to-app generation. A spoken request becomes a live interactive component — no code written by hand in this session.")
+    await a1("This is the part I love — a spoken request just became a live interactive app. No code written by hand in this session.")
     await asyncio.sleep(0.8)
-    await a1("The customer gets a printable reference card they can keep. Accessible whenever they call back.")
+    await a1("Customer gets a printable reference card. Accessible every time they call back.")
     # Wait for actual UI render to finish before Nexa announces
     if _ui_done_event and not _ui_done_event.is_set():
         try:
@@ -966,10 +967,10 @@ Add a blue "Print" button top-right. Use clean sans-serif font. Professional loo
     await asyncio.sleep(2)
 
     # ── Closing ──────────────────────────────────────────────────────────────
-    await a1("That was web search, task management, knowledge retrieval, and live app generation — all by voice, zero human input. Nexa, what's the takeaway?")
-    await a2("Every component is swappable. Different STT, LLM, or TTS — same pipeline architecture. No rewrites, no vendor lock-in.")
-    await asyncio.sleep(1)
-    await a1("That's what a production-grade voice AI pipeline looks like. Modular, composable, and built to scale.")
+    await a1("So — web search, task management, knowledge retrieval, live app generation. All voice. Zero human input. Nexa, what's the one thing someone should walk away with here?")
+    await a2("Every piece is swappable. Different STT, different LLM, different TTS — same architecture underneath. No rewrites, no vendor lock-in.")
+    await asyncio.sleep(0.5)
+    await a1("Exactly. Modular, composable, built to scale. That's what a real production voice AI pipeline looks like.")
     print("SHOWCASE: complete", flush=True)
 
 

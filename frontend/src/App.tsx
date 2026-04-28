@@ -188,6 +188,7 @@ const App: React.FC = () => {
     const botStreamRef = useRef<MediaStream | null>(null);
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const logsEndRef = useRef<HTMLDivElement | null>(null);
+    const logsContainerRef = useRef<HTMLDivElement | null>(null);
 
     useEffect(() => {
         // Only run on mount
@@ -221,7 +222,9 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        logsEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (logsContainerRef.current) {
+            logsContainerRef.current.scrollTop = logsContainerRef.current.scrollHeight;
+        }
     }, [logs]);
 
     useEffect(() => {
@@ -953,7 +956,7 @@ const App: React.FC = () => {
                                 </span>
                             </div>
                         </div>
-                        <div className="flex-1 overflow-y-auto px-8 py-4 font-mono text-[11px] space-y-2 scrollbar-hide text-slate-600">
+                        <div ref={logsContainerRef} className="flex-1 overflow-y-auto px-8 py-4 font-mono text-[11px] space-y-2 scrollbar-hide text-slate-600">
                             {logs.map((log, i) => (
                                 <div key={i} className="flex gap-4 group hover:bg-slate-50 rounded px-2 py-1 -mx-2 transition-colors">
                                     <span className="text-slate-400 font-bold">[{log.timestamp}]</span>
