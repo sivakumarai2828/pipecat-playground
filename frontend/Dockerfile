@@ -4,7 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ARG VITE_BACKEND_HOST=velix-backend-3hwbim6tfq-uc.a.run.app
+ARG VITE_BACKEND_HOST=velix-backend-1060228397602.us-central1.run.app
 ENV VITE_BACKEND_HOST=$VITE_BACKEND_HOST
 RUN npm run build
 
