@@ -334,11 +334,15 @@ const App: React.FC = () => {
         setIsConnecting(true);
         setStatus({ client: 'CONNECTING', agent: 'CONNECTING' });
         setErrorDialog(null);
-        // Pre-warm audio within user gesture context to satisfy browser autoplay policy
+        // Pre-warm: play a silent WAV to unlock audio element in user gesture context
         if (audioRef.current) {
-            audioRef.current.muted = true;
-            audioRef.current.play().catch(() => {});
-            audioRef.current.muted = false;
+            try {
+                audioRef.current.src = 'data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA';
+                await audioRef.current.play();
+                audioRef.current.pause();
+                audioRef.current.removeAttribute('src');
+                audioRef.current.srcObject = null;
+            } catch (_) { /* autoplay blocked — will retry when track arrives */ }
         }
 
         // Ensure WebSocket is connected
@@ -407,27 +411,35 @@ const App: React.FC = () => {
 
             let audioAttached = false;
 
-            const attachTrackDirectly = (track: MediaStreamTrack, label: string) => {
-                if (!audioRef.current) return;
-                console.log(`[${label}] Attaching audio track directly`);
-                const stream = new MediaStream([track]);
-                audioRef.current.srcObject = stream;
-                audioRef.current.play().catch(e => console.error('Audio play failed:', e));
-                audioAttached = true;
-                setLogs(prev => [...prev, { message: `Audio connected via ${label}`, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+            const dbgLog = (msg: string) =>
+                setLogs(prev => [...prev, { message: msg, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+
+            const attachTrackDirectly = async (track: MediaStreamTrack, label: string) => {
+                if (!audioRef.current) { dbgLog(`[${label}] SKIP: no audioRef`); return; }
+                if (audioAttached) return;
+                dbgLog(`[${label}] Attaching track kind=${track.kind} state=${track.readyState}`);
+                try {
+                    const stream = new MediaStream([track]);
+                    audioRef.current.srcObject = stream;
+                    await audioRef.current.play();
+                    audioAttached = true;
+                    dbgLog(`Audio connected via ${label}`);
+                } catch (e: any) {
+                    dbgLog(`[${label}] play() failed: ${e?.name} ${e?.message}`);
+                }
             };
 
             co.on('remote-participants-audio-level', (evt: any) => {
                 const levels = evt.participantsAudioLevel;
                 const maxLevel = Math.max(...Object.values(levels) as number[], 0);
                 setBotAudioLevel(maxLevel);
-                // Fallback: if audio not attached yet but levels are coming in, grab track from participants
                 if (!audioAttached && maxLevel > 0 && audioRef.current && !audioRef.current.srcObject) {
                     const allParticipants = co.participants();
                     Object.values(allParticipants).forEach((p: any) => {
                         if (!p.local && !audioAttached) {
                             const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
                             if (track) attachTrackDirectly(track, 'audio-level-fallback');
+                            else dbgLog(`audio-level-fallback: no track on participant ${p.session_id?.slice(0,8)}`);
                         }
                     });
                 }
@@ -436,8 +448,9 @@ const App: React.FC = () => {
             // Register track-started BEFORE agent/start so we never miss the event
             co.on('track-started', (evt) => {
                 const participant = evt.participant;
+                const kind = evt.track?.kind ?? 'undefined';
+                dbgLog(`track-started: kind=${kind} local=${participant?.local} id=${participant?.session_id?.slice(0,8)}`);
                 if (!participant || participant.local) return;
-                console.log('track-started:', evt.track?.kind, participant.user_name ?? participant.session_id);
                 if (evt.track?.kind === 'audio') {
                     attachTrackDirectly(evt.track, 'track-started');
                 }
@@ -446,8 +459,9 @@ const App: React.FC = () => {
             co.on('participant-updated', (evt) => {
                 const participant = evt.participant;
                 if (!participant || participant.local || audioAttached) return;
+                const audioState = participant?.tracks?.audio?.state;
                 const track = participant?.tracks?.audio?.persistentTrack ?? participant?.tracks?.audio?.track;
-                if (track && participant?.tracks?.audio?.state === 'playable') {
+                if (track && audioState === 'playable') {
                     attachTrackDirectly(track, 'participant-updated');
                 }
             });
@@ -461,10 +475,8 @@ const App: React.FC = () => {
 
             co.on('participant-joined', (evt) => {
                 const p = evt.participant;
-                console.log('Participant joined:', p.user_name ?? p.session_id);
-                // Mark agent ready for any remote participant (bot joins after agent/start)
+                dbgLog(`participant-joined: ${p.user_name ?? p.session_id?.slice(0,8)} local=${p.local}`);
                 setStatus(prev => ({ ...prev, agent: 'READY' }));
-                // Try attach if track already available
                 const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
                 if (track && !p.local) attachTrackDirectly(track, 'participant-joined');
             });
