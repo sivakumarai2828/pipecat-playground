@@ -1,5 +1,5 @@
 export interface Transcript {
-    role: 'user' | 'assistant';
+    role: 'user' | 'assistant' | 'agent2';
     text: string;
     timestamp: string;
 }

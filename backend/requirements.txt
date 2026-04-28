@@ -1,7 +1,8 @@
-pipecat-ai[speechmatics,cartesia,openai,daily]>=0.0.40
+pipecat-ai[speechmatics,cartesia,openai,daily]==0.0.103
 fastapi
 uvicorn
 websockets
 python-dotenv
 aiohttp
 numpy
+playwright

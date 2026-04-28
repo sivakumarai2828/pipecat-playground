@@ -15,7 +15,7 @@ class BrowserController:
         if self._browser is None:
             self._playwright = await async_playwright().start()
             self._browser = await self._playwright.chromium.launch(
-                headless=False,  # visible window so user sees it
+                headless=True,  # must be headless for Cloud Run
                 args=["--no-sandbox", "--disable-dev-shm-usage"],
             )
             self._page = await self._browser.new_page(
