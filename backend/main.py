@@ -887,10 +887,10 @@ async def _run_showcase_sequence(task):
     )
     await a1("Good. Speaking of cost — give me the real numbers. What's the actual difference between a modular pipeline and going audio-native?")
     await a2(
-        "Checking the knowledge base.",
-        capability="knowledge_base",
-        tool_task="Search for detailed information about voice AI cost comparison — why a modular STT plus LLM plus TTS pipeline is dramatically cheaper than audio-native APIs like GPT-4o Audio. Include specific dollar amounts per million tokens and the cost multiplier difference.",
-        tool_timeout=14,
+        "Checking the numbers.",
+        capability="web_search",
+        tool_task="Search for voice AI cost comparison — why a modular STT plus LLM plus TTS pipeline is dramatically cheaper than audio-native APIs like GPT-4o Audio. Find specific dollar amounts per million tokens and the cost multiplier difference between modular pipelines and audio-native APIs.",
+        tool_timeout=18,
         after="Modular pipeline runs three to five dollars per million tokens. Audio-native APIs — one hundred to two hundred. Forty-times cheaper. Full breakdown is on screen."
     )
     await a1("Forty times. That's the slide right there.")
@@ -940,6 +940,7 @@ Include these four sections (show all content expanded by default — no accordi
    - Flood Specialist: 1-800-555-0789
    - Online Portal: myclaims.insureco.com
 
+IMPORTANT: Sidebar navigation labels must be short single words or two-word max — use: "Coverage", "Exclusions", "File a Claim", "Contacts". Do NOT use long phrases in the nav.
 Add a blue "Print" button top-right. Use clean sans-serif font. Professional look — like a real insurance company PDF made into a web page. Each section has a colored left border stripe and an icon emoji.""",
         tool_timeout=12,
         wait_for_ui=False,
