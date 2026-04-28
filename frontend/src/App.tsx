@@ -475,10 +475,21 @@ const App: React.FC = () => {
 
             co.on('participant-joined', (evt) => {
                 const p = evt.participant;
-                dbgLog(`participant-joined: ${p.user_name ?? p.session_id?.slice(0,8)} local=${p.local}`);
+                dbgLog(`participant-joined: ${p.user_name ?? p.session_id?.slice(0,8)} local=${p.local} audioState=${p.tracks?.audio?.state}`);
                 setStatus(prev => ({ ...prev, agent: 'READY' }));
-                const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
-                if (track && !p.local) attachTrackDirectly(track, 'participant-joined');
+                if (!p.local) {
+                    // Force explicit audio track subscription — auto-subscribe may not work in call-object mode
+                    try {
+                        (co as any).updateParticipant(p.session_id, {
+                            setSubscribedTracks: { audio: true, video: false, screenVideo: false, screenAudio: false }
+                        });
+                        dbgLog(`subscribed to audio for ${p.session_id?.slice(0,8)}`);
+                    } catch(e: any) {
+                        dbgLog(`subscribe failed: ${e?.message}`);
+                    }
+                    const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
+                    if (track) attachTrackDirectly(track, 'participant-joined');
+                }
             });
 
             await co.startLocalAudioLevelObserver();
