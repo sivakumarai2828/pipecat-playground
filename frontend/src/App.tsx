@@ -487,8 +487,10 @@ const App: React.FC = () => {
                     const remote: any = Object.values(all).find((rp: any) => !rp.local);
                     const track = remote?.tracks?.audio?.persistentTrack ?? remote?.tracks?.audio?.track;
                     const state = remote?.tracks?.audio?.state;
-                    dbgLog(`poll[${attempts}] state=${state} track=${track ? 'yes' : 'no'}`);
-                    if (track && state === 'playable') {
+                    const rtcState = track?.readyState;
+                    dbgLog(`poll[${attempts}] state=${state} rtc=${rtcState} track=${track ? 'yes' : 'no'}`);
+                    // Attach even in 'loading' — browser plays when frames arrive
+                    if (track && (state === 'playable' || state === 'loading') && rtcState === 'live') {
                         clearInterval(poll);
                         attachTrackDirectly(track, `poll[${attempts}]`);
                     }
