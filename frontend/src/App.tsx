@@ -405,59 +405,68 @@ const App: React.FC = () => {
                 setUserAudioLevel(evt.audioLevel);
             });
 
+            let audioAttached = false;
+
+            const attachTrackDirectly = (track: MediaStreamTrack, label: string) => {
+                if (!audioRef.current) return;
+                console.log(`[${label}] Attaching audio track directly`);
+                const stream = new MediaStream([track]);
+                audioRef.current.srcObject = stream;
+                audioRef.current.play().catch(e => console.error('Audio play failed:', e));
+                audioAttached = true;
+                setLogs(prev => [...prev, { message: `Audio connected via ${label}`, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+            };
+
             co.on('remote-participants-audio-level', (evt: any) => {
                 const levels = evt.participantsAudioLevel;
-                // For this playground, we just take the highest remote level as bot level
                 const maxLevel = Math.max(...Object.values(levels) as number[], 0);
                 setBotAudioLevel(maxLevel);
-            });
-
-            const attachBotAudio = (participant: any, source: string) => {
-                if (!participant || participant.local) return;
-                const audioTrack = participant?.tracks?.audio?.persistentTrack
-                    ?? participant?.tracks?.audio?.track;
-                if (audioTrack && audioRef.current) {
-                    console.log(`[${source}] Attaching bot audio:`, participant.user_name);
-                    const stream = new MediaStream();
-                    stream.addTrack(audioTrack);
-                    audioRef.current.srcObject = stream;
-                    audioRef.current.play().catch(e => console.error('Audio play failed:', e));
-                    setLogs(prev => [...prev, { message: `Audio track started: ${participant.user_name}`, type: 'info', timestamp: new Date().toLocaleTimeString() }]);
+                // Fallback: if audio not attached yet but levels are coming in, grab track from participants
+                if (!audioAttached && maxLevel > 0 && audioRef.current && !audioRef.current.srcObject) {
+                    const allParticipants = co.participants();
+                    Object.values(allParticipants).forEach((p: any) => {
+                        if (!p.local && !audioAttached) {
+                            const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
+                            if (track) attachTrackDirectly(track, 'audio-level-fallback');
+                        }
+                    });
                 }
-            };
+            });
 
             // Register track-started BEFORE agent/start so we never miss the event
             co.on('track-started', (evt) => {
                 const participant = evt.participant;
                 if (!participant || participant.local) return;
-                console.log('track-started:', evt.track?.kind, participant.user_name);
+                console.log('track-started:', evt.track?.kind, participant.user_name ?? participant.session_id);
                 if (evt.track?.kind === 'audio') {
-                    attachBotAudio(participant, 'track-started');
+                    attachTrackDirectly(evt.track, 'track-started');
                 }
             });
 
             co.on('participant-updated', (evt) => {
                 const participant = evt.participant;
-                if (!participant || participant.local) return;
-                if (participant?.tracks?.audio?.state === 'playable') {
-                    attachBotAudio(participant, 'participant-updated');
+                if (!participant || participant.local || audioAttached) return;
+                const track = participant?.tracks?.audio?.persistentTrack ?? participant?.tracks?.audio?.track;
+                if (track && participant?.tracks?.audio?.state === 'playable') {
+                    attachTrackDirectly(track, 'participant-updated');
                 }
             });
 
             co.on('track-stopped', (evt) => {
-                console.log('Track stopped:', evt.track?.kind);
                 if (evt.track?.kind === 'audio' && audioRef.current) {
                     audioRef.current.srcObject = null;
+                    audioAttached = false;
                 }
             });
 
             co.on('participant-joined', (evt) => {
-                console.log('Participant joined:', evt.participant.user_name);
-                if (evt.participant.user_name === 'Pipecat Agent') {
-                    setStatus(prev => ({ ...prev, agent: 'READY' }));
-                    // Attach audio if track already available at join time
-                    attachBotAudio(evt.participant, 'participant-joined');
-                }
+                const p = evt.participant;
+                console.log('Participant joined:', p.user_name ?? p.session_id);
+                // Mark agent ready for any remote participant (bot joins after agent/start)
+                setStatus(prev => ({ ...prev, agent: 'READY' }));
+                // Try attach if track already available
+                const track = p.tracks?.audio?.persistentTrack ?? p.tracks?.audio?.track;
+                if (track && !p.local) attachTrackDirectly(track, 'participant-joined');
             });
 
             await co.startLocalAudioLevelObserver();
