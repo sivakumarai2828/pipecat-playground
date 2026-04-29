@@ -846,6 +846,9 @@ switch_voice_schema = {
 async def _run_showcase_sequence(task):
     """Two-agent conversation: Velix (host) ↔ Nexa (executor). Natural pacing.
     Nexa speaks intent first, tool executes, Nexa reports results — no human input needed."""
+    global tasks, _task_counter
+    tasks.clear()
+    _task_counter[0] = 0
 
     async def a1(text: str):
         if tts_service:
