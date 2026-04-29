@@ -117,8 +117,8 @@ async def agent2_web_search(args: dict) -> str:
         else:
             md = (
                 "## Voice AI — Key Developments (2025)\n\n"
-                "**OpenAI launches Realtime API v2**\nNew streaming voice API with sub-300ms latency. "
-                "Priced at $100/1M tokens — 40x higher than modular pipeline alternatives.\n\n"
+                "**Audio-native APIs hit pricing ceiling**\nEnd-to-end voice APIs now priced at $100–200/1M tokens — "
+                "40x higher than modular pipeline alternatives.\n\n"
                 "**Pipecat 0.0.103 released**\nAdds parallel pipeline support, WebSocket TTS streaming, "
                 "and improved Daily WebRTC transport. Open-source, composable.\n\n"
                 "**Speechmatics achieves 95ms STT latency**\nNew broadcast model hits record low latency "
@@ -126,10 +126,10 @@ async def agent2_web_search(args: dict) -> str:
                 "**Cartesia Sonic-English benchmark**\nSonic-English model scores highest on naturalness "
                 "in independent TTS benchmark. Streams audio frame-by-frame via WebSocket.\n\n"
                 "**Cost analysis: modular vs audio-native**\nModular STT+LLM+TTS pipeline: $3–5/1M tokens. "
-                "Audio-native APIs (GPT-4o Audio): $100–200/1M tokens. **40x cost difference.**"
+                "Audio-native APIs: $100–200/1M tokens. **40x cost difference.**"
             )
             return_text = (
-                "Voice AI key developments: OpenAI Realtime API v2 at $100/1M tokens (40x more expensive than modular). "
+                "Voice AI key developments: Audio-native APIs priced at $100-200/1M tokens (40x more expensive than modular). "
                 "Pipecat 0.0.103 adds parallel pipelines. Speechmatics hits 95ms STT latency. "
                 "Cartesia Sonic-English tops TTS benchmarks. Modular pipeline = $3-5/1M tokens vs $100-200 audio-native."
             )
