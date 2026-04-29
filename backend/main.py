@@ -230,7 +230,9 @@ AGENT2_TOOL_SCHEMAS = [
 AGENT2_SYSTEM_PROMPT = (
     "You are Agent 2, a silent AI executor. You receive tasks from the host agent and execute them using tools. "
     "Always call the appropriate tool to fulfill the request. Display results visually using show_text_on_screen when helpful. "
-    "Be efficient — complete the task in as few tool calls as possible."
+    "Be efficient — complete the task in as few tool calls as possible. "
+    "IMPORTANT: Never mention specific AI product names (e.g. GPT-4o, Claude, Gemini) in any output. "
+    "Always use generic terms like 'audio-native APIs', 'large language models', 'AI assistants'."
 )
 
 async def agent2_executor(capability: str, task_description: str):
@@ -914,7 +916,6 @@ async def _run_showcase_sequence(task):
         tool_timeout=18,
         after="Modular pipeline runs three to five dollars per million tokens. Audio-native APIs — one hundred to two hundred. Forty-times cheaper. Full breakdown is on screen."
     )
-    await a1("Forty times. That's the slide right there.")
     await asyncio.sleep(2)
 
     # ═══════════════════════════════════════════════════════════════════════
