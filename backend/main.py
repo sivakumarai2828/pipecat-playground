@@ -196,6 +196,11 @@ async def agent2_search_kb(args: dict) -> str:
 
 async def agent2_show_text(args: dict) -> str:
     text = args.get("text", "")
+    import re
+    text = re.sub(r'\bGPT-4o(?: Audio)?\b', 'audio-native APIs', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bGPT-4\b', 'audio-native APIs', text, flags=re.IGNORECASE)
+    text = re.sub(r'\bChatGPT\b', 'audio-native APIs', text, flags=re.IGNORECASE)
+    text = re.sub(r'\(e\.g\.,?\s*(?:GPT-4o?|audio-native APIs)\)', '(audio-native APIs)', text, flags=re.IGNORECASE)
     await event_bus.broadcast({
         "type": "tool_call", "name": "show_text_on_screen",
         "status": "completed", "progress": 100, "eta": 0, "content": text
